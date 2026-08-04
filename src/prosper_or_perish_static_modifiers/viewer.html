@@ -212,7 +212,6 @@
   </main>
   <script>
   const META_URL = "data/meta.json";
-  const MIN_SCALE = 0.5;
   const MAX_SCALE = 16;
 
   function viridis(t) {
@@ -373,9 +372,19 @@
       drawView();
     }
 
+    function fitScale() {
+      const { w, h } = cssSize();
+      return Math.min(w / mapW, h / mapH);
+    }
+
+    function minScale() {
+      // Never zoom out past the reset/fit framing.
+      return fitScale();
+    }
+
     function fitView() {
       const { w, h } = cssSize();
-      const scale = Math.min(w / mapW, h / mapH);
+      const scale = fitScale();
       view.scale = scale;
       view.originX = (mapW - w / scale) / 2;
       view.originY = (mapH - h / scale) / 2;
@@ -406,8 +415,16 @@
     }
 
     function zoomAt(sx, sy, factor) {
+      const floor = minScale();
+      const next = view.scale * factor;
+      // Zooming out to/through the fit scale snaps back to the reset framing.
+      if (next <= floor + 1e-9) {
+        fitView();
+        drawView();
+        return;
+      }
       const before = screenToMap(sx, sy);
-      view.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, view.scale * factor));
+      view.scale = Math.min(MAX_SCALE, next);
       view.originX = before.x - sx / view.scale;
       view.originY = before.y - sy / view.scale;
       clampView();
@@ -417,7 +434,7 @@
     function centerOnMap(mx, my, targetScale) {
       const { w, h } = cssSize();
       if (targetScale != null) {
-        view.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, targetScale));
+        view.scale = Math.min(MAX_SCALE, Math.max(minScale(), targetScale));
       }
       view.originX = mx - (w / view.scale) / 2;
       view.originY = my - (h / view.scale) / 2;
