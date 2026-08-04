@@ -334,6 +334,7 @@
       sampleY[id] = (i / mapW) | 0;
     }
     status.textContent = "Building location outlines…";
+    const outlineById = Array.from({ length: n + 1 }, () => []);
     for (let y = 0; y < mapH; y++) {
       const row = y * mapW;
       for (let x = 0; x < mapW; x++) {
@@ -347,6 +348,7 @@
           (y + 1 < mapH && idMap[i + mapW] !== id)
         ) {
           outlineMask[i] = 1;
+          outlineById[id].push(i);
         }
       }
     }
@@ -511,22 +513,34 @@
       tooltip.innerHTML = `<strong>${tag}</strong><br>${metric.label}: ${formatValue(value, metricId)} ${metric.unit}<br>${water}${pinNote}`;
     }
 
-    function drawHighlight(id) {
-      if (!id || !seen[id]) return;
-      const s = mapToScreen(sampleX[id], sampleY[id]);
-      const r = Math.max(6, 8 * Math.sqrt(view.scale));
+    function drawHighlight(id, color) {
+      const pixels = outlineById[id];
+      if (!id || !pixels || !pixels.length) return;
+      const dpr = window.devicePixelRatio || 1;
+      const { w, h } = cssSize();
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, r + 3, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255,255,255,0.95)";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255, 196, 64, 0.95)";
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
+      // Draw in map-pixel space so borders track zoom/pan exactly.
+      ctx.setTransform(
+        dpr * view.scale,
+        0,
+        0,
+        dpr * view.scale,
+        dpr * (-view.originX * view.scale),
+        dpr * (-view.originY * view.scale),
+      );
+      ctx.fillStyle = color;
+      // Slightly thicker than 1 map px when zoomed out so borders stay visible.
+      const pad = view.scale < 1.5 ? 0.75 : 0;
+      for (let k = 0; k < pixels.length; k++) {
+        const i = pixels[k];
+        const x = i % mapW;
+        const y = (i / mapW) | 0;
+        ctx.fillRect(x - pad, y - pad, 1 + pad * 2, 1 + pad * 2);
+      }
       ctx.restore();
+      // Restore CSS-pixel transform used by the rest of the frame.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      void w; void h;
     }
 
     function drawView() {
@@ -540,8 +554,12 @@
       const sh = h / view.scale;
       ctx.imageSmoothingEnabled = view.scale < 2;
       ctx.drawImage(offscreen, sx, sy, sw, sh, 0, 0, w, h);
-      if (pinnedId) drawHighlight(pinnedId);
-      if (hoverId && hoverId !== pinnedId) drawHighlight(hoverId);
+      if (hoverId && hoverId !== pinnedId) {
+        drawHighlight(hoverId, "rgba(255, 255, 255, 0.95)");
+      }
+      if (pinnedId) {
+        drawHighlight(pinnedId, "rgba(255, 196, 64, 0.98)");
+      }
       if (pinnedId) {
         const s = mapToScreen(sampleX[pinnedId], sampleY[pinnedId]);
         showTooltipForId(pinnedId, s.x, s.y, true);
