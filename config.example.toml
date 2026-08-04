@@ -1,0 +1,23 @@
+[paths]
+# EU5 install root (Windows paths are resolved under WSL automatically).
+vanilla_root = "C:\\Games\\steamapps\\common\\Europa Universalis V"
+
+# Optional overrides; defaults resolve from vanilla_root / repo-relative paths.
+# locations_png = "C:\\Games\\steamapps\\common\\Europa Universalis V\\game\\in_game\\map_data\\locations.png"
+labeling_baseline = "../ProsperOrPerishLabelingPipeline/base_data/locations_with_raw_material.parquet"
+
+# Game-authoritative footprint sample points (lon/lat + sample_weight per location).
+sample_points = "../ProsperOrPerishConstructor/artifacts/data/population_capacity/geometry_land_contract_candidate_v1/full/game_authoritative_physical_samples.parquet"
+
+gaez_cache_dir = "artifacts/gaez_cache"
+artifacts_dir = "artifacts"
+docs_dir = "docs"
+
+# Optional: pivot an existing long crop_mode_labels.parquet via `posm build-wide --from-labels`
+# labels_long = "../ProsperOrPerishConstructor/artifacts/data/population_capacity/crop_mode_labels.parquet"
+
+[pipeline]
+# Empty crops list means all 23 contracted crops.
+crops = []
+water_modes = ["rainfed", "irrigated"]
+equator_y = 1024

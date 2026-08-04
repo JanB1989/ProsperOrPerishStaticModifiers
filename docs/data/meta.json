@@ -1,0 +1,274 @@
+{
+  "title": "GAEZ Crop Mapmodes",
+  "default_metric": "production_density",
+  "location_count": 20929,
+  "attribute_columns": [
+    "banana_rainfed_production_density_kg_dm_total_ha",
+    "banana_rainfed_yield_kg_dm_ha",
+    "banana_rainfed_suitable_fraction",
+    "banana_irrigated_production_density_kg_dm_total_ha",
+    "banana_irrigated_yield_kg_dm_ha",
+    "banana_irrigated_suitable_fraction",
+    "barley_rainfed_production_density_kg_dm_total_ha",
+    "barley_rainfed_yield_kg_dm_ha",
+    "barley_rainfed_suitable_fraction",
+    "barley_irrigated_production_density_kg_dm_total_ha",
+    "barley_irrigated_yield_kg_dm_ha",
+    "barley_irrigated_suitable_fraction",
+    "cassava_rainfed_production_density_kg_dm_total_ha",
+    "cassava_rainfed_yield_kg_dm_ha",
+    "cassava_rainfed_suitable_fraction",
+    "cassava_irrigated_production_density_kg_dm_total_ha",
+    "cassava_irrigated_yield_kg_dm_ha",
+    "cassava_irrigated_suitable_fraction",
+    "chickpea_rainfed_production_density_kg_dm_total_ha",
+    "chickpea_rainfed_yield_kg_dm_ha",
+    "chickpea_rainfed_suitable_fraction",
+    "chickpea_irrigated_production_density_kg_dm_total_ha",
+    "chickpea_irrigated_yield_kg_dm_ha",
+    "chickpea_irrigated_suitable_fraction",
+    "cowpea_rainfed_production_density_kg_dm_total_ha",
+    "cowpea_rainfed_yield_kg_dm_ha",
+    "cowpea_rainfed_suitable_fraction",
+    "cowpea_irrigated_production_density_kg_dm_total_ha",
+    "cowpea_irrigated_yield_kg_dm_ha",
+    "cowpea_irrigated_suitable_fraction",
+    "dry_pea_rainfed_production_density_kg_dm_total_ha",
+    "dry_pea_rainfed_yield_kg_dm_ha",
+    "dry_pea_rainfed_suitable_fraction",
+    "dry_pea_irrigated_production_density_kg_dm_total_ha",
+    "dry_pea_irrigated_yield_kg_dm_ha",
+    "dry_pea_irrigated_suitable_fraction",
+    "phaseolus_bean_rainfed_production_density_kg_dm_total_ha",
+    "phaseolus_bean_rainfed_yield_kg_dm_ha",
+    "phaseolus_bean_rainfed_suitable_fraction",
+    "phaseolus_bean_irrigated_production_density_kg_dm_total_ha",
+    "phaseolus_bean_irrigated_yield_kg_dm_ha",
+    "phaseolus_bean_irrigated_suitable_fraction",
+    "mung_bean_rainfed_production_density_kg_dm_total_ha",
+    "mung_bean_rainfed_yield_kg_dm_ha",
+    "mung_bean_rainfed_suitable_fraction",
+    "mung_bean_irrigated_production_density_kg_dm_total_ha",
+    "mung_bean_irrigated_yield_kg_dm_ha",
+    "mung_bean_irrigated_suitable_fraction",
+    "pigeonpea_rainfed_production_density_kg_dm_total_ha",
+    "pigeonpea_rainfed_yield_kg_dm_ha",
+    "pigeonpea_rainfed_suitable_fraction",
+    "pigeonpea_irrigated_production_density_kg_dm_total_ha",
+    "pigeonpea_irrigated_yield_kg_dm_ha",
+    "pigeonpea_irrigated_suitable_fraction",
+    "soybean_rainfed_production_density_kg_dm_total_ha",
+    "soybean_rainfed_yield_kg_dm_ha",
+    "soybean_rainfed_suitable_fraction",
+    "soybean_irrigated_production_density_kg_dm_total_ha",
+    "soybean_irrigated_yield_kg_dm_ha",
+    "soybean_irrigated_suitable_fraction",
+    "taro_rainfed_production_density_kg_dm_total_ha",
+    "taro_rainfed_yield_kg_dm_ha",
+    "taro_rainfed_suitable_fraction",
+    "taro_irrigated_production_density_kg_dm_total_ha",
+    "taro_irrigated_yield_kg_dm_ha",
+    "taro_irrigated_suitable_fraction",
+    "foxtail_millet_rainfed_production_density_kg_dm_total_ha",
+    "foxtail_millet_rainfed_yield_kg_dm_ha",
+    "foxtail_millet_rainfed_suitable_fraction",
+    "foxtail_millet_irrigated_production_density_kg_dm_total_ha",
+    "foxtail_millet_irrigated_yield_kg_dm_ha",
+    "foxtail_millet_irrigated_suitable_fraction",
+    "maize_rainfed_production_density_kg_dm_total_ha",
+    "maize_rainfed_yield_kg_dm_ha",
+    "maize_rainfed_suitable_fraction",
+    "maize_irrigated_production_density_kg_dm_total_ha",
+    "maize_irrigated_yield_kg_dm_ha",
+    "maize_irrigated_suitable_fraction",
+    "oats_rainfed_production_density_kg_dm_total_ha",
+    "oats_rainfed_yield_kg_dm_ha",
+    "oats_rainfed_suitable_fraction",
+    "oats_irrigated_production_density_kg_dm_total_ha",
+    "oats_irrigated_yield_kg_dm_ha",
+    "oats_irrigated_suitable_fraction",
+    "pearl_millet_rainfed_production_density_kg_dm_total_ha",
+    "pearl_millet_rainfed_yield_kg_dm_ha",
+    "pearl_millet_rainfed_suitable_fraction",
+    "pearl_millet_irrigated_production_density_kg_dm_total_ha",
+    "pearl_millet_irrigated_yield_kg_dm_ha",
+    "pearl_millet_irrigated_suitable_fraction",
+    "rice_dry_rainfed_production_density_kg_dm_total_ha",
+    "rice_dry_rainfed_yield_kg_dm_ha",
+    "rice_dry_rainfed_suitable_fraction",
+    "rice_dry_irrigated_production_density_kg_dm_total_ha",
+    "rice_dry_irrigated_yield_kg_dm_ha",
+    "rice_dry_irrigated_suitable_fraction",
+    "rice_wet_rainfed_production_density_kg_dm_total_ha",
+    "rice_wet_rainfed_yield_kg_dm_ha",
+    "rice_wet_rainfed_suitable_fraction",
+    "rice_wet_irrigated_production_density_kg_dm_total_ha",
+    "rice_wet_irrigated_yield_kg_dm_ha",
+    "rice_wet_irrigated_suitable_fraction",
+    "rye_rainfed_production_density_kg_dm_total_ha",
+    "rye_rainfed_yield_kg_dm_ha",
+    "rye_rainfed_suitable_fraction",
+    "rye_irrigated_production_density_kg_dm_total_ha",
+    "rye_irrigated_yield_kg_dm_ha",
+    "rye_irrigated_suitable_fraction",
+    "sweet_potato_rainfed_production_density_kg_dm_total_ha",
+    "sweet_potato_rainfed_yield_kg_dm_ha",
+    "sweet_potato_rainfed_suitable_fraction",
+    "sweet_potato_irrigated_production_density_kg_dm_total_ha",
+    "sweet_potato_irrigated_yield_kg_dm_ha",
+    "sweet_potato_irrigated_suitable_fraction",
+    "sorghum_rainfed_production_density_kg_dm_total_ha",
+    "sorghum_rainfed_yield_kg_dm_ha",
+    "sorghum_rainfed_suitable_fraction",
+    "sorghum_irrigated_production_density_kg_dm_total_ha",
+    "sorghum_irrigated_yield_kg_dm_ha",
+    "sorghum_irrigated_suitable_fraction",
+    "wheat_rainfed_production_density_kg_dm_total_ha",
+    "wheat_rainfed_yield_kg_dm_ha",
+    "wheat_rainfed_suitable_fraction",
+    "wheat_irrigated_production_density_kg_dm_total_ha",
+    "wheat_irrigated_yield_kg_dm_ha",
+    "wheat_irrigated_suitable_fraction",
+    "white_potato_rainfed_production_density_kg_dm_total_ha",
+    "white_potato_rainfed_yield_kg_dm_ha",
+    "white_potato_rainfed_suitable_fraction",
+    "white_potato_irrigated_production_density_kg_dm_total_ha",
+    "white_potato_irrigated_yield_kg_dm_ha",
+    "white_potato_irrigated_suitable_fraction",
+    "yam_rainfed_production_density_kg_dm_total_ha",
+    "yam_rainfed_yield_kg_dm_ha",
+    "yam_rainfed_suitable_fraction",
+    "yam_irrigated_production_density_kg_dm_total_ha",
+    "yam_irrigated_yield_kg_dm_ha",
+    "yam_irrigated_suitable_fraction"
+  ],
+  "crops": [
+    {
+      "id": "banana",
+      "label": "Banana"
+    },
+    {
+      "id": "barley",
+      "label": "Barley"
+    },
+    {
+      "id": "cassava",
+      "label": "Cassava"
+    },
+    {
+      "id": "chickpea",
+      "label": "Chickpea"
+    },
+    {
+      "id": "cowpea",
+      "label": "Cowpea"
+    },
+    {
+      "id": "dry_pea",
+      "label": "Dry pea"
+    },
+    {
+      "id": "phaseolus_bean",
+      "label": "Phaseolus bean"
+    },
+    {
+      "id": "mung_bean",
+      "label": "Mung bean"
+    },
+    {
+      "id": "pigeonpea",
+      "label": "Pigeonpea"
+    },
+    {
+      "id": "soybean",
+      "label": "Soybean"
+    },
+    {
+      "id": "taro",
+      "label": "Taro"
+    },
+    {
+      "id": "foxtail_millet",
+      "label": "Foxtail millet"
+    },
+    {
+      "id": "maize",
+      "label": "Maize"
+    },
+    {
+      "id": "oats",
+      "label": "Oats"
+    },
+    {
+      "id": "pearl_millet",
+      "label": "Pearl millet"
+    },
+    {
+      "id": "rice_dry",
+      "label": "Dry rice"
+    },
+    {
+      "id": "rice_wet",
+      "label": "Wet rice"
+    },
+    {
+      "id": "rye",
+      "label": "Rye"
+    },
+    {
+      "id": "sweet_potato",
+      "label": "Sweet potato"
+    },
+    {
+      "id": "sorghum",
+      "label": "Sorghum"
+    },
+    {
+      "id": "wheat",
+      "label": "Wheat"
+    },
+    {
+      "id": "white_potato",
+      "label": "White potato"
+    },
+    {
+      "id": "yam",
+      "label": "Yam"
+    }
+  ],
+  "water_modes": [
+    "rainfed",
+    "irrigated"
+  ],
+  "metrics": [
+    {
+      "id": "production_density",
+      "suffix": "production_density_kg_dm_total_ha",
+      "label": "Production density",
+      "unit": "kg DM / total ha"
+    },
+    {
+      "id": "yield",
+      "suffix": "yield_kg_dm_ha",
+      "label": "Yield",
+      "unit": "kg DM / suitable ha"
+    },
+    {
+      "id": "suitable_fraction",
+      "suffix": "suitable_fraction",
+      "label": "Suitable fraction",
+      "unit": "fraction"
+    }
+  ],
+  "map": {
+    "width": 8192,
+    "height": 4096,
+    "dtype": "uint16"
+  },
+  "assets": {
+    "location_id_map": "assets/location_id_map.bin.gz",
+    "attributes": "data/attributes.bin.gz",
+    "locations": "data/locations.json.gz"
+  },
+  "climate_scope": "GAEZ v5 RES05 HP8100 (1981-2000) modern diagnostic"
+}

@@ -1,0 +1,25 @@
+# Local machine config and heavy artifacts
+config.local.toml
+artifacts/
+*.tif
+*.tiff
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Never commit vanilla EU5 map bytes
+**/locations.png

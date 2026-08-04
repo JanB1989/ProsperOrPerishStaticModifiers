@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prosper or Perish — GAEZ Crop Mapmodes</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6f8;
+      --ink: #1a2332;
+      --muted: #5a6a7a;
+      --panel: #ffffff;
+      --line: #d5dee7;
+      --accent: #2f6f73;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.25rem; }
+    .note { margin: 0; color: var(--muted); font-size: 0.9rem; max-width: 72rem; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+      padding: 14px 20px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      align-items: end;
+    }
+    label { display: grid; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+    select, button {
+      font: inherit;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+    }
+    main {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 16px;
+      padding: 16px 20px 28px;
+      align-items: start;
+    }
+    .map-wrap {
+      position: relative;
+      background: #0b1220;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    canvas { display: block; width: 100%; height: auto; cursor: crosshair; }
+    #tooltip {
+      position: absolute;
+      pointer-events: none;
+      display: none;
+      background: rgba(10, 16, 28, 0.92);
+      color: #f5f7fa;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      line-height: 1.35;
+      max-width: 280px;
+      z-index: 2;
+    }
+    .legend {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .legend h2 { margin: 0 0 8px; font-size: 0.95rem; }
+    .swatch {
+      height: 14px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #2c3e50, #27ae60, #f1c40f, #e74c3c);
+      margin: 8px 0;
+    }
+    .legend .range { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.75rem; }
+    .status { color: var(--muted); font-size: 0.85rem; padding: 0 20px 12px; }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GAEZ Crop Mapmodes</h1>
+    <p class="note">
+      EU5 locations colored by FAO GAEZ v5 HP8100 (1981–2000) modern crop/soil physics.
+      Default metric is production density (kg dry matter per total cell hectare), which stays readable where suitability is sparse.
+      Yield and suitable fraction are available as secondary views.
+    </p>
+  </header>
+  <div class="controls">
+    <label>Crop
+      <select id="crop"></select>
+    </label>
+    <label>Water mode
+      <select id="water">
+        <option value="rainfed">Rain-fed</option>
+        <option value="irrigated">Irrigated</option>
+      </select>
+    </label>
+    <label>Metric
+      <select id="metric"></select>
+    </label>
+  </div>
+  <div class="status" id="status">Loading map data…</div>
+  <main>
+    <div class="map-wrap">
+      <canvas id="map"></canvas>
+      <div id="tooltip"></div>
+    </div>
+    <aside class="legend">
+      <h2 id="legendTitle">Production density</h2>
+      <div class="swatch"></div>
+      <div class="range"><span id="legendMin">0</span><span id="legendMax">—</span></div>
+      <p class="note" id="legendUnit" style="margin-top:10px"></p>
+    </aside>
+  </main>
+  <script>
+  const META_URL = "data/meta.json";
+
+  function viridis(t) {
+    const stops = [
+      [68,1,84],[72,35,116],[64,67,135],[52,94,141],[41,120,142],
+      [32,144,140],[34,167,132],[68,190,112],[122,209,81],[189,222,38],[253,231,37]
+    ];
+    t = Math.max(0, Math.min(1, t));
+    const x = t * (stops.length - 1);
+    const i = Math.floor(x);
+    const f = x - i;
+    const a = stops[i];
+    const b = stops[Math.min(i + 1, stops.length - 1)];
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * f),
+      Math.round(a[1] + (b[1] - a[1]) * f),
+      Math.round(a[2] + (b[2] - a[2]) * f),
+      255
+    ];
+  }
+
+  async function gunzip(buffer) {
+    if (typeof DecompressionStream !== "undefined") {
+      const ds = new DecompressionStream("gzip");
+      const stream = new Response(buffer).body.pipeThrough(ds);
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    throw new Error("Browser lacks DecompressionStream; use a modern Chromium/Firefox.");
+  }
+
+  async function loadGzip(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load ${url}`);
+    return gunzip(await res.arrayBuffer());
+  }
+
+  function percentile(values, p) {
+    const filtered = [];
+    for (let i = 0; i < values.length; i++) {
+      const v = values[i];
+      if (Number.isFinite(v) && v > 0) filtered.push(v);
+    }
+    if (!filtered.length) return 0;
+    filtered.sort((a, b) => a - b);
+    const idx = Math.min(filtered.length - 1, Math.floor((filtered.length - 1) * p));
+    return filtered[idx];
+  }
+
+  function formatValue(v, metricId) {
+    if (!Number.isFinite(v)) return "—";
+    if (metricId === "suitable_fraction") return (v * 100).toFixed(1) + "%";
+    if (v >= 1000) return v.toFixed(0);
+    if (v >= 10) return v.toFixed(1);
+    return v.toFixed(2);
+  }
+
+  async function main() {
+    const status = document.getElementById("status");
+    const meta = await (await fetch(META_URL)).json();
+    const cropSelect = document.getElementById("crop");
+    const waterSelect = document.getElementById("water");
+    const metricSelect = document.getElementById("metric");
+
+    for (const crop of meta.crops) {
+      const opt = document.createElement("option");
+      opt.value = crop.id;
+      opt.textContent = crop.label;
+      cropSelect.appendChild(opt);
+    }
+    for (const metric of meta.metrics) {
+      const opt = document.createElement("option");
+      opt.value = metric.id;
+      opt.textContent = metric.label;
+      if (metric.id === meta.default_metric) opt.selected = true;
+      metricSelect.appendChild(opt);
+    }
+
+    status.textContent = "Loading location id map…";
+    const idBytes = await loadGzip(meta.assets.location_id_map);
+    const idMap = new Uint16Array(idBytes.buffer);
+    const width = meta.map.width;
+    const height = meta.map.height;
+    if (idMap.length !== width * height) {
+      throw new Error("location id map size mismatch");
+    }
+
+    status.textContent = "Loading attributes…";
+    const [attrBytes, locBytes] = await Promise.all([
+      loadGzip(meta.assets.attributes),
+      loadGzip(meta.assets.locations),
+    ]);
+    const attributes = new Float32Array(attrBytes.buffer);
+    const locations = JSON.parse(new TextDecoder().decode(locBytes));
+    const n = meta.location_count;
+    const columns = meta.attribute_columns;
+    if (attributes.length !== n * columns.length) {
+      throw new Error("attribute pack size mismatch");
+    }
+
+    const canvas = document.getElementById("map");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    const image = ctx.createImageData(width, height);
+    const tooltip = document.getElementById("tooltip");
+
+    function columnIndex(crop, water, metricId) {
+      const metric = meta.metrics.find(m => m.id === metricId);
+      const name = `${crop}_${water}_${metric.suffix}`;
+      const idx = columns.indexOf(name);
+      if (idx < 0) throw new Error("missing column " + name);
+      return idx;
+    }
+
+    function valueAt(rowIndex1Based, colIdx) {
+      if (rowIndex1Based <= 0) return NaN;
+      const row = rowIndex1Based - 1;
+      return attributes[colIdx * n + row];
+    }
+
+    function recolor() {
+      const crop = cropSelect.value;
+      const water = waterSelect.value;
+      const metricId = metricSelect.value;
+      const metric = meta.metrics.find(m => m.id === metricId);
+      const colIdx = columnIndex(crop, water, metricId);
+      const slice = attributes.subarray(colIdx * n, (colIdx + 1) * n);
+      const vmax = Math.max(percentile(slice, 0.98), 1e-6);
+      document.getElementById("legendTitle").textContent = metric.label;
+      document.getElementById("legendUnit").textContent = metric.unit;
+      document.getElementById("legendMin").textContent = "0";
+      document.getElementById("legendMax").textContent = formatValue(vmax, metricId);
+
+      const pixels = image.data;
+      for (let i = 0; i < idMap.length; i++) {
+        const id = idMap[i];
+        const o = i * 4;
+        if (id === 0) {
+          pixels[o] = 11; pixels[o+1] = 18; pixels[o+2] = 32; pixels[o+3] = 255;
+          continue;
+        }
+        const v = valueAt(id, colIdx);
+        if (!Number.isFinite(v) || v <= 0) {
+          pixels[o] = 55; pixels[o+1] = 65; pixels[o+2] = 78; pixels[o+3] = 255;
+          continue;
+        }
+        const t = Math.min(1, v / vmax);
+        const [r,g,b,a] = viridis(t);
+        pixels[o] = r; pixels[o+1] = g; pixels[o+2] = b; pixels[o+3] = a;
+      }
+      ctx.putImageData(image, 0, 0);
+      status.textContent = `${meta.crops.find(c => c.id === crop).label} · ${water} · ${metric.label}`;
+    }
+
+    function pointerToPixel(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((evt.clientX - rect.left) * (width / rect.width));
+      const y = Math.floor((evt.clientY - rect.top) * (height / rect.height));
+      return { x, y };
+    }
+
+    canvas.addEventListener("mousemove", (evt) => {
+      const { x, y } = pointerToPixel(evt);
+      if (x < 0 || y < 0 || x >= width || y >= height) {
+        tooltip.style.display = "none";
+        return;
+      }
+      const id = idMap[y * width + x];
+      if (!id) {
+        tooltip.style.display = "none";
+        return;
+      }
+      const crop = cropSelect.value;
+      const water = waterSelect.value;
+      const metricId = metricSelect.value;
+      const metric = meta.metrics.find(m => m.id === metricId);
+      const colIdx = columnIndex(crop, water, metricId);
+      const tag = locations[id - 1];
+      const value = valueAt(id, colIdx);
+      tooltip.style.display = "block";
+      tooltip.style.left = (evt.offsetX + 14) + "px";
+      tooltip.style.top = (evt.offsetY + 14) + "px";
+      tooltip.innerHTML = `<strong>${tag}</strong><br>${metric.label}: ${formatValue(value, metricId)} ${metric.unit}<br>${water}`;
+    });
+    canvas.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+
+    cropSelect.addEventListener("change", recolor);
+    waterSelect.addEventListener("change", recolor);
+    metricSelect.addEventListener("change", recolor);
+    recolor();
+  }
+
+  main().catch((err) => {
+    document.getElementById("status").textContent = String(err);
+    console.error(err);
+  });
+  </script>
+</body>
+</html>

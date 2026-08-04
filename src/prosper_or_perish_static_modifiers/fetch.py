@@ -1,0 +1,109 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import urllib.request
+from pathlib import Path
+
+from prosper_or_perish_static_modifiers.crops import RasterSpec, raster_specs, selected_crops
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _download(
+    url: str,
+    target: Path,
+    *,
+    expected_sha256: str,
+    source_id: str,
+) -> dict[str, object]:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.is_file():
+        digest = sha256_file(target)
+        if expected_sha256 and digest != expected_sha256:
+            raise ValueError(
+                f"cached {target.name} sha256 mismatch: got {digest}, expected {expected_sha256}"
+            )
+        return {
+            "source": source_id,
+            "url": url,
+            "path": str(target),
+            "status": "cached",
+            "sha256": digest,
+        }
+
+    tmp = target.with_suffix(target.suffix + ".partial")
+    urllib.request.urlretrieve(url, tmp)
+    digest = sha256_file(tmp)
+    if expected_sha256 and digest != expected_sha256:
+        tmp.unlink(missing_ok=True)
+        raise ValueError(
+            f"download {target.name} sha256 mismatch: got {digest}, expected {expected_sha256}"
+        )
+    tmp.replace(target)
+    return {
+        "source": source_id,
+        "url": url,
+        "path": str(target),
+        "status": "downloaded",
+        "sha256": digest,
+    }
+
+
+def fetch_gaez(
+    cache_dir: Path,
+    *,
+    crops: list[str] | None = None,
+    water_modes: tuple[str, ...] | list[str] = ("rainfed", "irrigated"),
+) -> dict[str, object]:
+    crop_defs = selected_crops(crops)
+    specs = raster_specs(crops=crop_defs, water_modes=tuple(water_modes))
+    rows: list[dict[str, object]] = []
+    for spec in specs:
+        source_id = (
+            f"gaez_v5_{spec.variable.removeprefix('RES05-').lower()}"
+            f"_{spec.crop}_{spec.crop_variant}_{spec.water_mode}"
+        )
+        rows.append(
+            _download(
+                spec.url,
+                cache_dir / spec.cache_relpath,
+                expected_sha256=spec.expected_sha256,
+                source_id=source_id,
+            )
+        )
+    manifest = {
+        "engine": "gaez_v5",
+        "period": "HP8100 1981-2000",
+        "variables": ["RES05-YXX", "RES05-YLX", "RES05-SX3"],
+        "source_count": len(rows),
+        "sources": rows,
+    }
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = cache_dir / "source_manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return manifest
+
+
+def resolve_raster_path(cache_dir: Path, spec: RasterSpec) -> Path:
+    path = cache_dir / spec.cache_relpath
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"missing GAEZ raster {path}; run `uv run posm fetch-gaez` first"
+        )
+    if spec.expected_sha256:
+        digest = sha256_file(path)
+        if digest != spec.expected_sha256:
+            raise ValueError(
+                f"raster {path.name} sha256 mismatch: got {digest}, expected {spec.expected_sha256}"
+            )
+    return path
