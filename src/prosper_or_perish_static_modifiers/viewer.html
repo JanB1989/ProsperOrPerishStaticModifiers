@@ -189,6 +189,10 @@
         <button type="button" id="zoomOut" title="Zoom out (−)">−</button>
         <button type="button" id="zoomIn" title="Zoom in (+)">+</button>
         <button type="button" id="resetView" title="Reset view (0)">Reset</button>
+        <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:0.85rem;color:var(--ink)">
+          <input id="showOutlines" type="checkbox" checked>
+          Outlines
+        </label>
       </div>
     </div>
   </div>
@@ -315,17 +319,36 @@
       throw new Error("attribute pack size mismatch");
     }
 
-    // One representative pixel per location for fly-to / highlight.
+    // One representative pixel per location for fly-to / highlight,
+    // plus a location-boundary mask from id discontinuities.
     status.textContent = "Indexing location samples…";
     const sampleX = new Float32Array(n + 1);
     const sampleY = new Float32Array(n + 1);
     const seen = new Uint8Array(n + 1);
+    const outlineMask = new Uint8Array(idMap.length);
     for (let i = 0; i < idMap.length; i++) {
       const id = idMap[i];
       if (!id || seen[id]) continue;
       seen[id] = 1;
       sampleX[id] = i % mapW;
       sampleY[id] = (i / mapW) | 0;
+    }
+    status.textContent = "Building location outlines…";
+    for (let y = 0; y < mapH; y++) {
+      const row = y * mapW;
+      for (let x = 0; x < mapW; x++) {
+        const i = row + x;
+        const id = idMap[i];
+        if (!id) continue;
+        if (
+          (x > 0 && idMap[i - 1] !== id) ||
+          (x + 1 < mapW && idMap[i + 1] !== id) ||
+          (y > 0 && idMap[i - mapW] !== id) ||
+          (y + 1 < mapH && idMap[i + mapW] !== id)
+        ) {
+          outlineMask[i] = 1;
+        }
+      }
     }
     const tagToId = new Map();
     for (let i = 0; i < n; i++) tagToId.set(locations[i], i + 1);
@@ -554,6 +577,16 @@
         const t = Math.min(1, v / vmax);
         const [r, g, b, a] = viridis(t);
         pixels[o] = r; pixels[o + 1] = g; pixels[o + 2] = b; pixels[o + 3] = a;
+      }
+      if (document.getElementById("showOutlines").checked) {
+        for (let i = 0; i < outlineMask.length; i++) {
+          if (!outlineMask[i]) continue;
+          const o = i * 4;
+          // Dark edge so borders stay readable over any fill color.
+          pixels[o] = (pixels[o] * 0.25) | 0;
+          pixels[o + 1] = (pixels[o + 1] * 0.25) | 0;
+          pixels[o + 2] = (pixels[o + 2] * 0.25) | 0;
+        }
       }
       offCtx.putImageData(image, 0, 0);
       updateStatus();
@@ -791,6 +824,7 @@
     cropSelect.addEventListener("change", recolor);
     waterSelect.addEventListener("change", recolor);
     metricSelect.addEventListener("change", recolor);
+    document.getElementById("showOutlines").addEventListener("change", recolor);
     window.addEventListener("resize", () => {
       resizeCanvas();
       clampView();
