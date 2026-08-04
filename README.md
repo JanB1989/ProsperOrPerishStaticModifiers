@@ -60,7 +60,9 @@ Open `http://127.0.0.1:8000/`.
 
 ## GitHub Pages
 
-Enable Pages for this repo with source **Deploy from a branch** → `main` → `/docs`.
+Live site: https://janb1989.github.io/ProsperOrPerishStaticModifiers/
+
+Pages is configured from branch `main` / folder `/docs`.
 
 The committed `docs/` tree must include the generated attribute pack and location id map. Vanilla `locations.png` is never committed.
 
