@@ -252,6 +252,20 @@
     return gunzip(await res.arrayBuffer());
   }
 
+  // DecompressionStream may return a Uint8Array view over a larger ArrayBuffer.
+  // Construct typed arrays from the view span only (byteOffset/byteLength).
+  function asTypedArray(TypedArray, bytes) {
+    const bytesPer = TypedArray.BYTES_PER_ELEMENT;
+    if (bytes.byteLength % bytesPer !== 0) {
+      throw new Error(`decoded byte length ${bytes.byteLength} not divisible by ${bytesPer}`);
+    }
+    if (bytes.byteOffset % bytesPer === 0) {
+      return new TypedArray(bytes.buffer, bytes.byteOffset, bytes.byteLength / bytesPer);
+    }
+    const copy = bytes.slice();
+    return new TypedArray(copy.buffer, 0, copy.byteLength / bytesPer);
+  }
+
   function percentile(values, p, includeZero) {
     const filtered = [];
     for (let i = 0; i < values.length; i++) {
@@ -324,7 +338,7 @@
 
     status.textContent = "Loading location id map…";
     const idBytes = await loadGzip(meta.assets.location_id_map);
-    const idMap = new Uint16Array(idBytes.buffer);
+    const idMap = asTypedArray(Uint16Array, idBytes);
     const mapW = meta.map.width;
     const mapH = meta.map.height;
     if (idMap.length !== mapW * mapH) {
@@ -336,7 +350,7 @@
       loadGzip(meta.assets.attributes),
       loadGzip(meta.assets.locations),
     ]);
-    const attributes = new Float32Array(attrBytes.buffer);
+    const attributes = asTypedArray(Float32Array, attrBytes);
     const locations = JSON.parse(new TextDecoder().decode(locBytes));
     const n = meta.location_count;
     const columns = meta.attribute_columns;
