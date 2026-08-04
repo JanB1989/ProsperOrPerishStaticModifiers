@@ -15,24 +15,33 @@
       --accent: #2f6f73;
     }
     * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+    }
     body {
       margin: 0;
       font-family: "Segoe UI", system-ui, sans-serif;
       background: var(--bg);
       color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
     }
     header {
+      flex: 0 0 auto;
       background: var(--panel);
       border-bottom: 1px solid var(--line);
-      padding: 16px 20px;
+      padding: 10px 16px;
     }
-    h1 { margin: 0 0 6px; font-size: 1.25rem; }
-    .note { margin: 0; color: var(--muted); font-size: 0.9rem; max-width: 72rem; }
+    h1 { margin: 0 0 4px; font-size: 1.1rem; }
+    .note { margin: 0; color: var(--muted); font-size: 0.82rem; max-width: 72rem; }
     .controls {
+      flex: 0 0 auto;
       display: flex;
       flex-wrap: wrap;
-      gap: 12px 18px;
-      padding: 14px 20px;
+      gap: 10px 14px;
+      padding: 10px 16px;
       background: var(--panel);
       border-bottom: 1px solid var(--line);
       align-items: end;
@@ -74,21 +83,28 @@
     }
     #searchResults li:hover,
     #searchResults li.active { background: #e8f2f3; }
+    .status {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 6px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
     main {
-      display: grid;
-      grid-template-columns: 1fr 220px;
-      gap: 16px;
-      padding: 16px 20px 28px;
-      align-items: start;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: block;
+      padding: 0;
+      position: relative;
     }
     .map-wrap {
-      position: relative;
+      position: absolute;
+      inset: 0;
       background: #0b1220;
-      border-radius: 10px;
+      border-radius: 0;
       overflow: hidden;
-      border: 1px solid var(--line);
-      height: min(70vh, 720px);
-      min-height: 360px;
+      border: none;
     }
     canvas {
       display: block;
@@ -115,10 +131,17 @@
       outline: 1px solid rgba(255, 214, 102, 0.8);
     }
     .legend {
-      background: var(--panel);
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 3;
+      width: 210px;
+      background: rgba(255, 255, 255, 0.94);
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 14px;
+      padding: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      backdrop-filter: blur(6px);
     }
     .legend h2 { margin: 0 0 8px; font-size: 0.95rem; }
     .swatch {
@@ -129,10 +152,8 @@
     }
     .legend .range { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.75rem; }
     .hint { margin-top: 12px; font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
-    .status { color: var(--muted); font-size: 0.85rem; padding: 0 20px 12px; }
-    @media (max-width: 900px) {
-      main { grid-template-columns: 1fr; }
-      .map-wrap { height: 55vh; }
+    @media (max-width: 700px) {
+      .legend { width: auto; left: 12px; right: 12px; }
     }
   </style>
 </head>
@@ -176,18 +197,18 @@
     <div class="map-wrap" id="mapWrap">
       <canvas id="map"></canvas>
       <div id="tooltip"></div>
+      <aside class="legend">
+        <h2 id="legendTitle">Production density</h2>
+        <div class="swatch"></div>
+        <div class="range"><span id="legendMin">0</span><span id="legendMax">—</span></div>
+        <p class="note" id="legendUnit" style="margin-top:10px"></p>
+        <p class="hint">
+          Scroll to zoom · drag to pan · click to pin ·
+          <kbd>/</kbd> search · <kbd>Esc</kbd> clear ·
+          <kbd>0</kbd> reset
+        </p>
+      </aside>
     </div>
-    <aside class="legend">
-      <h2 id="legendTitle">Production density</h2>
-      <div class="swatch"></div>
-      <div class="range"><span id="legendMin">0</span><span id="legendMax">—</span></div>
-      <p class="note" id="legendUnit" style="margin-top:10px"></p>
-      <p class="hint">
-        Scroll to zoom · drag to pan · click to pin ·
-        <kbd>/</kbd> search · <kbd>Esc</kbd> clear ·
-        <kbd>0</kbd> reset
-      </p>
-    </aside>
   </main>
   <script>
   const META_URL = "data/meta.json";
