@@ -163,7 +163,7 @@
     <p class="note">
       EU5 locations colored by FAO GAEZ v5 HP8100 (1981–2000) modern crop/soil physics.
       Default metric is production density (kg dry matter per total cell hectare).
-      Other views: yield, suitable fraction, suitability class, irrigation need, and crop calendar.
+      Irrigation need and crop calendar only appear when water mode is Irrigated.
     </p>
   </header>
   <div class="controls">
@@ -320,21 +320,57 @@
       opt.textContent = crop.label;
       cropSelect.appendChild(opt);
     }
-    const groups = new Map();
-    for (const metric of meta.metrics) {
-      const groupName = metric.group || "Metrics";
-      if (!groups.has(groupName)) {
-        const og = document.createElement("optgroup");
-        og.label = groupName;
-        groups.set(groupName, og);
-        metricSelect.appendChild(og);
-      }
-      const opt = document.createElement("option");
-      opt.value = metric.id;
-      opt.textContent = metric.label;
-      if (metric.id === meta.default_metric) opt.selected = true;
-      groups.get(groupName).appendChild(opt);
+
+    function metricWaterModes(metric) {
+      return metric.water_modes && metric.water_modes.length
+        ? metric.water_modes
+        : meta.water_modes;
     }
+
+    function metricAllowsWater(metric, water) {
+      return metricWaterModes(metric).includes(water);
+    }
+
+    function rebuildMetricOptions(preferredId) {
+      const water = waterSelect.value;
+      const previous = preferredId || metricSelect.value || meta.default_metric;
+      metricSelect.innerHTML = "";
+      const groups = new Map();
+      let available = [];
+      for (const metric of meta.metrics) {
+        if (!metricAllowsWater(metric, water)) continue;
+        available.push(metric);
+        const groupName = metric.group || "Metrics";
+        if (!groups.has(groupName)) {
+          const og = document.createElement("optgroup");
+          og.label = groupName;
+          groups.set(groupName, og);
+          metricSelect.appendChild(og);
+        }
+        const opt = document.createElement("option");
+        opt.value = metric.id;
+        opt.textContent = metric.label;
+        groups.get(groupName).appendChild(opt);
+      }
+      const ids = new Set(available.map(m => m.id));
+      const pick = ids.has(previous)
+        ? previous
+        : (ids.has(meta.default_metric) ? meta.default_metric : (available[0] && available[0].id));
+      if (pick) metricSelect.value = pick;
+      return pick;
+    }
+
+    function syncWaterToMetric() {
+      const metric = meta.metrics.find(m => m.id === metricSelect.value);
+      if (!metric) return;
+      const modes = metricWaterModes(metric);
+      if (!modes.includes(waterSelect.value)) {
+        waterSelect.value = modes[0];
+        rebuildMetricOptions(metric.id);
+      }
+    }
+
+    rebuildMetricOptions(meta.default_metric);
 
     status.textContent = "Loading location id map…";
     const idBytes = await loadGzip(meta.assets.location_id_map);
@@ -897,8 +933,14 @@
     });
 
     cropSelect.addEventListener("change", recolor);
-    waterSelect.addEventListener("change", recolor);
-    metricSelect.addEventListener("change", recolor);
+    waterSelect.addEventListener("change", () => {
+      rebuildMetricOptions();
+      recolor();
+    });
+    metricSelect.addEventListener("change", () => {
+      syncWaterToMetric();
+      recolor();
+    });
     document.getElementById("showOutlines").addEventListener("change", recolor);
     window.addEventListener("resize", () => {
       resizeCanvas();

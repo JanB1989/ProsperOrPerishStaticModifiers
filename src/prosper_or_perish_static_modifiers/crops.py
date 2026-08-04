@@ -9,17 +9,18 @@ GAEZ_V5_BASE = (
     "https://storage.googleapis.com/fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-YXX"
 )
 
-# id, column suffix in long/wide frames, label, unit, UI group, zero_is_missing
+# id, suffix, label, unit, UI group, zero_is_missing, compatible water_modes
 METRICS = (
-    ("production_density", "production_density_kg_dm_total_ha", "Production density", "kg DM / total ha", "Potential", True),
-    ("yield", "yield_kg_dm_ha", "Yield", "kg DM / suitable ha", "Potential", True),
-    ("suitable_fraction", "suitable_fraction", "Suitable fraction", "fraction", "Potential", True),
-    ("suitability_index", "suitability_index", "Suitability class", "class 1 best → 9 worst", "Potential", True),
-    ("irrigation_need", "net_irrigation_requirement_mm", "Irrigation need", "mm", "Water & calendar", False),
-    ("cycle_start", "crop_cycle_start_doy", "Cycle start", "day of year", "Water & calendar", True),
-    ("cycle_length", "crop_cycle_length_days", "Cycle length", "days", "Water & calendar", True),
+    ("production_density", "production_density_kg_dm_total_ha", "Production density", "kg DM / total ha", "Potential", True, WATER_MODES),
+    ("yield", "yield_kg_dm_ha", "Yield", "kg DM / suitable ha", "Potential", True, WATER_MODES),
+    ("suitable_fraction", "suitable_fraction", "Suitable fraction", "fraction", "Potential", True, WATER_MODES),
+    ("suitability_index", "suitability_index", "Suitability class", "class 1 best → 9 worst", "Potential", True, WATER_MODES),
+    ("irrigation_need", "net_irrigation_requirement_mm", "Irrigation need", "mm", "Water & calendar", False, ("irrigated",)),
+    ("cycle_start", "crop_cycle_start_doy", "Cycle start", "day of year", "Water & calendar", True, ("irrigated",)),
+    ("cycle_length", "crop_cycle_length_days", "Cycle length", "days", "Water & calendar", True, ("irrigated",)),
 )
 DEFAULT_METRIC = "production_density"
+
 
 def iter_metrics():
     """Yield normalized metric dicts from METRICS tuples."""
@@ -27,6 +28,7 @@ def iter_metrics():
         metric_id, suffix, label, unit = row[0], row[1], row[2], row[3]
         group = row[4] if len(row) > 4 else "Potential"
         zero_is_missing = row[5] if len(row) > 5 else True
+        water_modes = tuple(row[6]) if len(row) > 6 else WATER_MODES
         yield {
             "id": metric_id,
             "suffix": suffix,
@@ -34,6 +36,7 @@ def iter_metrics():
             "unit": unit,
             "group": group,
             "zero_is_missing": bool(zero_is_missing),
+            "water_modes": list(water_modes),
         }
 
 

@@ -431,7 +431,11 @@
       "label": "Production density",
       "unit": "kg DM / total ha",
       "group": "Potential",
-      "zero_is_missing": true
+      "zero_is_missing": true,
+      "water_modes": [
+        "rainfed",
+        "irrigated"
+      ]
     },
     {
       "id": "yield",
@@ -439,7 +443,11 @@
       "label": "Yield",
       "unit": "kg DM / suitable ha",
       "group": "Potential",
-      "zero_is_missing": true
+      "zero_is_missing": true,
+      "water_modes": [
+        "rainfed",
+        "irrigated"
+      ]
     },
     {
       "id": "suitable_fraction",
@@ -447,7 +455,11 @@
       "label": "Suitable fraction",
       "unit": "fraction",
       "group": "Potential",
-      "zero_is_missing": true
+      "zero_is_missing": true,
+      "water_modes": [
+        "rainfed",
+        "irrigated"
+      ]
     },
     {
       "id": "suitability_index",
@@ -455,7 +467,11 @@
       "label": "Suitability class",
       "unit": "class 1 best \u2192 9 worst",
       "group": "Potential",
-      "zero_is_missing": true
+      "zero_is_missing": true,
+      "water_modes": [
+        "rainfed",
+        "irrigated"
+      ]
     },
     {
       "id": "irrigation_need",
@@ -463,7 +479,10 @@
       "label": "Irrigation need",
       "unit": "mm",
       "group": "Water & calendar",
-      "zero_is_missing": false
+      "zero_is_missing": false,
+      "water_modes": [
+        "irrigated"
+      ]
     },
     {
       "id": "cycle_start",
@@ -471,7 +490,10 @@
       "label": "Cycle start",
       "unit": "day of year",
       "group": "Water & calendar",
-      "zero_is_missing": true
+      "zero_is_missing": true,
+      "water_modes": [
+        "irrigated"
+      ]
     },
     {
       "id": "cycle_length",
@@ -479,7 +501,10 @@
       "label": "Cycle length",
       "unit": "days",
       "group": "Water & calendar",
-      "zero_is_missing": true
+      "zero_is_missing": true,
+      "water_modes": [
+        "irrigated"
+      ]
     }
   ],
   "map": {

@@ -101,6 +101,7 @@ def publish_docs(
                 "unit": metric["unit"],
                 "group": metric["group"],
                 "zero_is_missing": metric["zero_is_missing"],
+                "water_modes": metric["water_modes"],
             }
             for metric in iter_metrics()
         ],

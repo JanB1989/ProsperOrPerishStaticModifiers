@@ -107,7 +107,9 @@ def test_publish_pack_round_trip(tmp_path: Path) -> None:
     assert meta["location_count"] == 2
     assert any(col.endswith("production_density_kg_dm_total_ha") for col in meta["attribute_columns"])
     assert {m["id"] for m in meta["metrics"]} >= {"irrigation_need", "cycle_start", "suitability_index"}
-    assert all("group" in m and "zero_is_missing" in m for m in meta["metrics"])
+    assert all("group" in m and "zero_is_missing" in m and "water_modes" in m for m in meta["metrics"])
+    irrig = next(m for m in meta["metrics"] if m["id"] == "irrigation_need")
+    assert irrig["water_modes"] == ["irrigated"]
 
     with gzip.open(docs_dir / "data" / "attributes.bin.gz", "rb") as handle:
         attrs = np.frombuffer(handle.read(), dtype=np.float32)
