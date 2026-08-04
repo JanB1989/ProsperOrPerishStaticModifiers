@@ -162,8 +162,8 @@
     <h1>GAEZ Crop Mapmodes</h1>
     <p class="note">
       EU5 locations colored by FAO GAEZ v5 HP8100 (1981–2000) modern crop/soil physics.
-      Default metric is production density (kg dry matter per total cell hectare), which stays readable where suitability is sparse.
-      Yield and suitable fraction are available as secondary views.
+      Default metric is production density (kg dry matter per total cell hectare).
+      Other views: yield, suitable fraction, suitability class, irrigation need, and crop calendar.
     </p>
   </header>
   <div class="controls">
@@ -252,11 +252,12 @@
     return gunzip(await res.arrayBuffer());
   }
 
-  function percentile(values, p) {
+  function percentile(values, p, includeZero) {
     const filtered = [];
     for (let i = 0; i < values.length; i++) {
       const v = values[i];
-      if (Number.isFinite(v) && v > 0) filtered.push(v);
+      if (!Number.isFinite(v)) continue;
+      if (includeZero ? v >= 0 : v > 0) filtered.push(v);
     }
     if (!filtered.length) return 0;
     filtered.sort((a, b) => a - b);
@@ -264,9 +265,25 @@
     return filtered[idx];
   }
 
+  function isMissingValue(v, metric) {
+    if (!Number.isFinite(v)) return true;
+    if (metric && metric.zero_is_missing === false) return false;
+    return v <= 0;
+  }
+
+  function scaleValue(v, metricId) {
+    // Suitability class: 1 best … 9 worst — invert so better lands on warmer colors.
+    if (metricId === "suitability_index") return 10 - v;
+    return v;
+  }
+
   function formatValue(v, metricId) {
     if (!Number.isFinite(v)) return "—";
     if (metricId === "suitable_fraction") return (v * 100).toFixed(1) + "%";
+    if (metricId === "suitability_index") return Math.round(v).toString();
+    if (metricId === "cycle_start") return "day " + Math.round(v);
+    if (metricId === "cycle_length") return Math.round(v) + " d";
+    if (metricId === "irrigation_need") return (v >= 10 ? v.toFixed(0) : v.toFixed(1)) + " mm";
     if (v >= 1000) return v.toFixed(0);
     if (v >= 10) return v.toFixed(1);
     return v.toFixed(2);
@@ -289,12 +306,20 @@
       opt.textContent = crop.label;
       cropSelect.appendChild(opt);
     }
+    const groups = new Map();
     for (const metric of meta.metrics) {
+      const groupName = metric.group || "Metrics";
+      if (!groups.has(groupName)) {
+        const og = document.createElement("optgroup");
+        og.label = groupName;
+        groups.set(groupName, og);
+        metricSelect.appendChild(og);
+      }
       const opt = document.createElement("option");
       opt.value = metric.id;
       opt.textContent = metric.label;
       if (metric.id === meta.default_metric) opt.selected = true;
-      metricSelect.appendChild(opt);
+      groups.get(groupName).appendChild(opt);
     }
 
     status.textContent = "Loading location id map…";
@@ -510,7 +535,10 @@
       tooltip.style.left = Math.max(8, left) + "px";
       tooltip.style.top = Math.max(8, top) + "px";
       const pinNote = pinned ? "<br><em>Pinned · Esc to clear</em>" : "";
-      tooltip.innerHTML = `<strong>${tag}</strong><br>${metric.label}: ${formatValue(value, metricId)} ${metric.unit}<br>${water}${pinNote}`;
+      const unitSuffix = (metricId === "irrigation_need" || metricId === "cycle_length" || metricId === "cycle_start" || metricId === "suitable_fraction")
+        ? ""
+        : ` ${metric.unit}`;
+      tooltip.innerHTML = `<strong>${tag}</strong><br>${metric.label}: ${formatValue(value, metricId)}${unitSuffix}<br>${water}${pinNote}`;
     }
 
     function drawHighlight(id, color) {
@@ -573,11 +601,26 @@
       const metric = meta.metrics.find(m => m.id === metricId);
       const colIdx = columnIndex(crop, water, metricId);
       const slice = attributes.subarray(colIdx * n, (colIdx + 1) * n);
-      const vmax = Math.max(percentile(slice, 0.98), 1e-6);
+      const includeZero = metric.zero_is_missing === false;
+      const scaled = new Float32Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        const raw = slice[i];
+        scaled[i] = isMissingValue(raw, metric) ? NaN : scaleValue(raw, metricId);
+      }
+      const vmax = Math.max(percentile(scaled, 0.98, includeZero), 1e-6);
+      const vmin = includeZero ? 0 : 0;
       document.getElementById("legendTitle").textContent = metric.label;
       document.getElementById("legendUnit").textContent = metric.unit;
-      document.getElementById("legendMin").textContent = "0";
-      document.getElementById("legendMax").textContent = formatValue(vmax, metricId);
+      if (metricId === "suitability_index") {
+        document.getElementById("legendMin").textContent = "9 worst";
+        document.getElementById("legendMax").textContent = "1 best";
+      } else {
+        document.getElementById("legendMin").textContent = formatValue(vmin, metricId);
+        document.getElementById("legendMax").textContent = formatValue(
+          metricId === "suitability_index" ? 10 - vmax : vmax,
+          metricId
+        );
+      }
 
       const pixels = image.data;
       for (let i = 0; i < idMap.length; i++) {
@@ -588,11 +631,11 @@
           continue;
         }
         const v = valueAt(id, colIdx);
-        if (!Number.isFinite(v) || v <= 0) {
+        if (isMissingValue(v, metric)) {
           pixels[o] = 55; pixels[o + 1] = 65; pixels[o + 2] = 78; pixels[o + 3] = 255;
           continue;
         }
-        const t = Math.min(1, v / vmax);
+        const t = Math.min(1, scaleValue(v, metricId) / vmax);
         const [r, g, b, a] = viridis(t);
         pixels[o] = r; pixels[o + 1] = g; pixels[o + 2] = b; pixels[o + 3] = a;
       }

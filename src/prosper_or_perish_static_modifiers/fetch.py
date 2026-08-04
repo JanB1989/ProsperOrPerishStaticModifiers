@@ -64,9 +64,13 @@ def fetch_gaez(
     *,
     crops: list[str] | None = None,
     water_modes: tuple[str, ...] | list[str] = ("rainfed", "irrigated"),
+    variables: tuple[str, ...] | None = None,
 ) -> dict[str, object]:
     crop_defs = selected_crops(crops)
-    specs = raster_specs(crops=crop_defs, water_modes=tuple(water_modes))
+    kwargs = {"crops": crop_defs, "water_modes": tuple(water_modes)}
+    if variables is not None:
+        kwargs["variables"] = tuple(variables)
+    specs = raster_specs(**kwargs)
     rows: list[dict[str, object]] = []
     for spec in specs:
         source_id = (
@@ -81,15 +85,38 @@ def fetch_gaez(
                 source_id=source_id,
             )
         )
+    variables = sorted({spec.variable for spec in specs})
     manifest = {
         "engine": "gaez_v5",
         "period": "HP8100 1981-2000",
-        "variables": ["RES05-YXX", "RES05-YLX", "RES05-SX3"],
+        "variables": variables,
         "source_count": len(rows),
         "sources": rows,
     }
     cache_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = cache_dir / "source_manifest.json"
+    if manifest_path.is_file() and variables != ["RES05-SX3", "RES05-YLX", "RES05-YXX"]:
+        try:
+            previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            previous = {}
+        prev_sources = {
+            (row.get("source"), row.get("path")): row
+            for row in previous.get("sources", [])
+            if isinstance(row, dict)
+        }
+        for row in rows:
+            prev_sources[(row.get("source"), row.get("path"))] = row
+        merged = list(prev_sources.values())
+        manifest = {
+            "engine": "gaez_v5",
+            "period": "HP8100 1981-2000",
+            "variables": sorted(
+                set(previous.get("variables", [])) | set(variables)
+            ),
+            "source_count": len(merged),
+            "sources": merged,
+        }
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
 

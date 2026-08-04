@@ -55,6 +55,7 @@ class ProjectConfig:
     artifacts_dir: Path
     docs_dir: Path
     labels_long: Path | None
+    crop_samples_dir: Path | None
     crops: list[str]
     water_modes: list[str]
     equator_y: int
@@ -110,6 +111,7 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
         base=repo,
     )
     labels_raw = paths.get("labels_long")
+    samples_raw = paths.get("crop_samples_dir")
     return ProjectConfig(
         repo=repo,
         vanilla_root=vanilla_root,
@@ -120,6 +122,7 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
         artifacts_dir=resolve_path(paths.get("artifacts_dir", "artifacts"), base=repo),
         docs_dir=resolve_path(paths.get("docs_dir", "docs"), base=repo),
         labels_long=resolve_path(labels_raw, base=repo) if labels_raw else None,
+        crop_samples_dir=resolve_path(samples_raw, base=repo) if samples_raw else None,
         crops=list(pipeline.get("crops") or []),
         water_modes=list(pipeline.get("water_modes") or ["rainfed", "irrigated"]),
         equator_y=int(pipeline.get("equator_y", 1024)),

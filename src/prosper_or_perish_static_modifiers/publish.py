@@ -10,8 +10,8 @@ import polars as pl
 
 from prosper_or_perish_static_modifiers.crops import (
     DEFAULT_METRIC,
-    METRICS,
     WATER_MODES,
+    iter_metrics,
     metric_column,
     selected_crops,
 )
@@ -57,8 +57,8 @@ def publish_docs(
     columns: list[str] = []
     for crop in crop_defs:
         for water_mode in water_modes:
-            for _metric_id, suffix, _label, _unit in METRICS:
-                columns.append(metric_column(crop.crop, water_mode, suffix))
+            for metric in iter_metrics():
+                columns.append(metric_column(crop.crop, water_mode, metric["suffix"]))
 
     missing = [col for col in columns if col not in ordered.columns]
     if missing:
@@ -94,8 +94,15 @@ def publish_docs(
         "crops": [{"id": crop.crop, "label": crop.label} for crop in crop_defs],
         "water_modes": list(water_modes),
         "metrics": [
-            {"id": metric_id, "suffix": suffix, "label": label, "unit": unit}
-            for metric_id, suffix, label, unit in METRICS
+            {
+                "id": metric["id"],
+                "suffix": metric["suffix"],
+                "label": metric["label"],
+                "unit": metric["unit"],
+                "group": metric["group"],
+                "zero_is_missing": metric["zero_is_missing"],
+            }
+            for metric in iter_metrics()
         ],
         "map": {
             "width": id_meta["width"],

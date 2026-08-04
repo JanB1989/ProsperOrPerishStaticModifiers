@@ -103,6 +103,9 @@ def cmd_build_wide(args: argparse.Namespace) -> int:
             output_path=cfg.wide_path,
             crops=cfg.crops or None,
             water_modes=tuple(cfg.water_modes),
+            crop_samples_dir=cfg.crop_samples_dir,
+            sample_points_path=cfg.sample_points,
+            gaez_cache_dir=cfg.gaez_cache_dir,
         )
     else:
         path = build_wide_dataframe(
@@ -134,7 +137,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
 
 def cmd_serve(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
-    root = cfg.docs_di
+    root = cfg.docs_dir
     port = int(args.port)
 
     class Handler(http.server.SimpleHTTPRequestHandler):

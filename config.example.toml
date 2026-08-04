@@ -15,6 +15,8 @@ docs_dir = "docs"
 
 # Optional: pivot an existing long crop_mode_labels.parquet via `posm build-wide --from-labels`
 # labels_long = "../ProsperOrPerishConstructor/artifacts/data/population_capacity/crop_mode_labels.parquet"
+# Optional: constructor crop_mode_samples for calendar enrichment when building wide from labels.
+# crop_samples_dir = "../ProsperOrPerishConstructor/artifacts/data/population_capacity/crop_mode_samples/gaez_v5"
 
 [pipeline]
 # Empty crops list means all 23 contracted crops.

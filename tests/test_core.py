@@ -11,6 +11,7 @@ from prosper_or_perish_static_modifiers.crops import (
     CROPS,
     GAEZ_V5_YLX_SHA256,
     GAEZ_V5_YXX_SHA256,
+    iter_metrics,
     metric_column,
     raster_specs,
     sha256_lock_count,
@@ -33,6 +34,12 @@ def test_raster_specs_include_ylx_density() -> None:
     variables = {spec.variable for spec in specs}
     assert variables == {"RES05-YXX", "RES05-YLX", "RES05-SX3"}
     assert any("YLX" in spec.filename for spec in specs)
+    six = raster_specs(
+        crops=tuple(c for c in CROPS if c.crop == "wheat"),
+        variables=("RES05-SIX",),
+    )
+    assert len(six) == 2
+    assert all(spec.variable == "RES05-SIX" for spec in six)
 
 
 def test_wide_pivot_column_naming() -> None:
@@ -44,29 +51,31 @@ def test_wide_pivot_column_naming() -> None:
             "yield_kg_dm_ha": [1.0, 2.0, 3.0, 4.0],
             "production_density_kg_dm_total_ha": [10.0, 20.0, 30.0, 40.0],
             "suitable_fraction": [0.1, 0.2, 0.3, 0.4],
+            "net_irrigation_requirement_mm": [0.0, 50.0, 0.0, 80.0],
+            "crop_cycle_start_doy": [None, 60.0, None, 90.0],
+            "crop_cycle_length_days": [None, 120.0, None, 140.0],
+            "suitability_index": [4.0, 3.0, 5.0, 2.0],
         }
     )
     wide = pivot_location_metrics(long, crops=["wheat"])
     assert metric_column("wheat", "rainfed", "production_density_kg_dm_total_ha") in wide.columns
     assert metric_column("wheat", "irrigated", "yield_kg_dm_ha") in wide.columns
+    assert metric_column("wheat", "irrigated", "net_irrigation_requirement_mm") in wide.columns
+    assert metric_column("wheat", "irrigated", "suitability_index") in wide.columns
     row_a = wide.filter(pl.col("location_tag") == "a").to_dicts()[0]
     assert row_a["wheat_rainfed_production_density_kg_dm_total_ha"] == 10.0
     assert row_a["wheat_irrigated_suitable_fraction"] == 0.2
+    assert row_a["wheat_irrigated_net_irrigation_requirement_mm"] == 50.0
 
 
 def test_publish_pack_round_trip(tmp_path: Path) -> None:
     tags = ["loc_a", "loc_b"]
-    wide = pl.DataFrame(
-        {
-            "location_tag": tags,
-            "wheat_rainfed_production_density_kg_dm_total_ha": [1.5, 0.0],
-            "wheat_rainfed_yield_kg_dm_ha": [100.0, 0.0],
-            "wheat_rainfed_suitable_fraction": [0.25, 0.0],
-            "wheat_irrigated_production_density_kg_dm_total_ha": [2.5, 1.0],
-            "wheat_irrigated_yield_kg_dm_ha": [120.0, 50.0],
-            "wheat_irrigated_suitable_fraction": [0.4, 0.1],
-        }
-    )
+    data: dict[str, object] = {"location_tag": tags}
+    for water in ("rainfed", "irrigated"):
+        for metric in iter_metrics():
+            col = metric_column("wheat", water, metric["suffix"])
+            data[col] = [1.5, 0.0] if water == "rainfed" else [2.5, 1.0]
+    wide = pl.DataFrame(data)
     wide_path = tmp_path / "wide.parquet"
     wide.write_parquet(wide_path)
 
@@ -97,8 +106,11 @@ def test_publish_pack_round_trip(tmp_path: Path) -> None:
     assert meta["default_metric"] == "production_density"
     assert meta["location_count"] == 2
     assert any(col.endswith("production_density_kg_dm_total_ha") for col in meta["attribute_columns"])
+    assert {m["id"] for m in meta["metrics"]} >= {"irrigation_need", "cycle_start", "suitability_index"}
+    assert all("group" in m and "zero_is_missing" in m for m in meta["metrics"])
 
     with gzip.open(docs_dir / "data" / "attributes.bin.gz", "rb") as handle:
         attrs = np.frombuffer(handle.read(), dtype=np.float32)
     assert attrs.shape[0] == 2 * len(meta["attribute_columns"])
     assert (docs_dir / "index.html").is_file()
+

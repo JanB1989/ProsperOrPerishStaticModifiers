@@ -9,19 +9,44 @@ GAEZ_V5_BASE = (
     "https://storage.googleapis.com/fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-YXX"
 )
 
+# id, column suffix in long/wide frames, label, unit, UI group, zero_is_missing
 METRICS = (
-    ("production_density", "production_density_kg_dm_total_ha", "Production density", "kg DM / total ha"),
-    ("yield", "yield_kg_dm_ha", "Yield", "kg DM / suitable ha"),
-    ("suitable_fraction", "suitable_fraction", "Suitable fraction", "fraction"),
+    ("production_density", "production_density_kg_dm_total_ha", "Production density", "kg DM / total ha", "Potential", True),
+    ("yield", "yield_kg_dm_ha", "Yield", "kg DM / suitable ha", "Potential", True),
+    ("suitable_fraction", "suitable_fraction", "Suitable fraction", "fraction", "Potential", True),
+    ("suitability_index", "suitability_index", "Suitability class", "class 1 best → 9 worst", "Potential", True),
+    ("irrigation_need", "net_irrigation_requirement_mm", "Irrigation need", "mm", "Water & calendar", False),
+    ("cycle_start", "crop_cycle_start_doy", "Cycle start", "day of year", "Water & calendar", True),
+    ("cycle_length", "crop_cycle_length_days", "Cycle length", "days", "Water & calendar", True),
 )
 DEFAULT_METRIC = "production_density"
+
+def iter_metrics():
+    """Yield normalized metric dicts from METRICS tuples."""
+    for row in METRICS:
+        metric_id, suffix, label, unit = row[0], row[1], row[2], row[3]
+        group = row[4] if len(row) > 4 else "Potential"
+        zero_is_missing = row[5] if len(row) > 5 else True
+        yield {
+            "id": metric_id,
+            "suffix": suffix,
+            "label": label,
+            "unit": unit,
+            "group": group,
+            "zero_is_missing": bool(zero_is_missing),
+        }
+
+
+def metric_suffixes() -> tuple[str, ...]:
+    return tuple(m["suffix"] for m in iter_metrics())
+
 
 
 @dataclass(frozen=True)
 class CropDefinition:
-    crop: st
-    label: st
-    gaez_code: st
+    crop: str
+    label: str
+    gaez_code: str
     gaez_variant_codes: tuple[str, ...] = ()
 
     @property
@@ -55,7 +80,6 @@ CROPS = (
     CropDefinition("yam", "Yam", "YAM"),
 )
 CROP_BY_NAME = {crop.crop: crop for crop in CROPS}
-
 # Locked FAO GAEZ v5 SHA256 digests (copied from ProsperOrPerishPopulationCapacityPipeline).
 GAEZ_V5_YXX_SHA256 = {
     ("banana", "rainfed"): "7974e449008df30bc0a7392fdbe9247571490cdb9d71339a950f0b584a21b88d",
@@ -216,16 +240,16 @@ GAEZ_V5_VARIANT_SHA256 = {
 
 @dataclass(frozen=True)
 class RasterSpec:
-    crop: st
-    crop_code: st
-    crop_variant: st
-    variable: st
-    water_mode: st
-    management_code: st
-    filename: st
-    url: st
-    expected_sha256: st
-    cache_relpath: st
+    crop: str
+    crop_code: str
+    crop_variant: str
+    variable: str
+    water_mode: str
+    management_code: str
+    filename: str
+    url: str
+    expected_sha256: str
+    cache_relpath: str
 
 
 def management_code(water_mode: str) -> str:
@@ -254,6 +278,9 @@ def expected_sha256(variable: str, crop: str, water_mode: str, crop_code: str) -
         return GAEZ_V5_YLX_SHA256.get((crop, water_mode), "")
     if variable == "RES05-SX3":
         return GAEZ_V5_SX3_SHA256.get((crop, water_mode), "")
+    if variable == "RES05-SIX":
+        # Suitability-class rasters are unlocked; verify by successful download/read.
+        return ""
     raise ValueError(f"unsupported GAEZ variable: {variable}")
 
 
@@ -275,11 +302,11 @@ def raster_specs(
     crops: tuple[CropDefinition, ...] | None = None,
     water_modes: tuple[str, ...] = WATER_MODES,
     base_url: str = GAEZ_V5_BASE,
+    variables: tuple[str, ...] = ("RES05-YXX", "RES05-YLX", "RES05-SX3"),
 ) -> list[RasterSpec]:
     crops = crops or CROPS
     mapset_root = base_url.rsplit("/", 1)[0]
     specs: list[RasterSpec] = []
-    variables = ("RES05-YXX", "RES05-YLX", "RES05-SX3")
     for crop in crops:
         for water_mode in water_modes:
             mgmt = management_code(water_mode)
