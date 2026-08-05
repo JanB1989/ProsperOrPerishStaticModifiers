@@ -52,7 +52,7 @@ uv run posm build-external
 uv run posm publish
 ```
 
-Open `http://127.0.0.1:8000/`. Use **Dataset → Exploration layers** for MapSPAM / GLW / Europe 1500 / population / EU5 groups.
+Open `http://127.0.0.1:8000/`. Use **Dataset** for GAEZ, Exploration layers, or EU5 population.
 
 ### Outputs
 

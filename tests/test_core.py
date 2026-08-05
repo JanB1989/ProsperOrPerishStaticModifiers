@@ -155,7 +155,11 @@ def test_publish_pack_round_trip(tmp_path: Path) -> None:
 
 
 def test_publish_exploration_pack(tmp_path: Path) -> None:
-    from prosper_or_perish_static_modifiers.external_layers import PILOT_LAYERS
+    from prosper_or_perish_static_modifiers.external_layers import (
+        EU5_LAYERS,
+        EXPLORATION_LAYERS,
+        PILOT_LAYERS,
+    )
 
     tags = ["loc_a", "loc_b"]
     data: dict[str, object] = {"location_tag": tags}
@@ -192,13 +196,17 @@ def test_publish_exploration_pack(tmp_path: Path) -> None:
     )
     meta = json.loads((docs_dir / "data" / "meta.json").read_text(encoding="utf-8"))
     assert meta["exploration"] is not None
-    assert len(meta["exploration"]["layers"]) == len(PILOT_LAYERS)
+    assert meta["eu5"] is not None
+    assert len(meta["exploration"]["layers"]) == len(EXPLORATION_LAYERS)
+    assert len(meta["eu5"]["layers"]) == len(EU5_LAYERS)
     assert (docs_dir / "data" / "exploration_attributes.bin.gz").is_file()
+    assert (docs_dir / "data" / "eu5_attributes.bin.gz").is_file()
     assert "spam_cotton_rainfed_yield" in meta["exploration"]["attribute_columns"]
     assert "glw_cattle_density" in meta["exploration"]["attribute_columns"]
     assert "europe_ag_suitability_1500" in meta["exploration"]["attribute_columns"]
-    assert "eu5_population_total" in meta["exploration"]["attribute_columns"]
-    assert "eu5_population_density" in meta["exploration"]["attribute_columns"]
+    assert "eu5_population_total" not in meta["exploration"]["attribute_columns"]
+    assert "eu5_population_total" in meta["eu5"]["attribute_columns"]
+    assert "eu5_population_density" in meta["eu5"]["attribute_columns"]
 
 
 def test_parse_eu5_start_population_scales_game_units(tmp_path: Path) -> None:
@@ -270,5 +278,15 @@ def test_pilot_layer_catalog_covers_plan() -> None:
         "Historical Europe",
         "Modern population",
         "Historical population",
-        "EU5 population",
+        "Population",
     }
+    from prosper_or_perish_static_modifiers.external_layers import (
+        EU5_LAYERS,
+        EXPLORATION_LAYERS,
+    )
+
+    assert {layer.layer_id for layer in EU5_LAYERS} == {
+        "eu5_population_total",
+        "eu5_population_density",
+    }
+    assert all(layer.source != "eu5" for layer in EXPLORATION_LAYERS)

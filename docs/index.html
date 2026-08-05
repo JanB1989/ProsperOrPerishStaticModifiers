@@ -163,7 +163,7 @@
     <p class="note">
       EU5 locations colored by FAO GAEZ v5 HP8100 (1981–2000) modern crop/soil physics.
       Default metric is production density (kg dry matter per km² of total cell area).
-      Dataset switch: GAEZ potential, or exploration layers (MapSPAM / GLW / Europe 1500 / population / EU5).
+      Dataset switch: GAEZ potential, exploration layers (MapSPAM / GLW / HYDE / …), or EU5 1337 population.
       Density mapmodes use people or heads per km²; color scale is the 98th percentile of the active layer.
     </p>
   </header>
@@ -172,6 +172,7 @@
       <select id="dataset">
         <option value="gaez">GAEZ potential</option>
         <option value="exploration">Exploration layers</option>
+        <option value="eu5">EU5 population</option>
       </select>
     </label>
     <label id="cropLabel">Crop
@@ -388,13 +389,35 @@
     rebuildMetricOptions(meta.default_metric);
 
     let explorationAttrs = null;
+    let eu5Attrs = null;
     const hasExploration = !!(meta.exploration && meta.exploration.layers && meta.exploration.layers.length);
+    const hasEu5 = !!(meta.eu5 && meta.eu5.layers && meta.eu5.layers.length);
     if (!hasExploration) {
       datasetSelect.querySelector('option[value="exploration"]').disabled = true;
-    } else {
+    }
+    if (!hasEu5) {
+      datasetSelect.querySelector('option[value="eu5"]').disabled = true;
+    }
+
+    function datasetBundle(mode) {
+      if (mode === "exploration") return meta.exploration;
+      if (mode === "eu5") return meta.eu5;
+      return null;
+    }
+
+    function datasetAttrs(mode) {
+      if (mode === "exploration") return explorationAttrs;
+      if (mode === "eu5") return eu5Attrs;
+      return null;
+    }
+
+    function rebuildLayerOptions(mode) {
+      const bundle = datasetBundle(mode);
+      layerSelect.innerHTML = "";
+      if (!bundle) return;
       const groups = new Map();
-      for (const layer of meta.exploration.layers) {
-        const groupName = layer.group || "Exploration";
+      for (const layer of bundle.layers) {
+        const groupName = layer.group || "Layers";
         if (!groups.has(groupName)) {
           const og = document.createElement("optgroup");
           og.label = groupName;
@@ -404,18 +427,26 @@
         const opt = document.createElement("option");
         opt.value = layer.id;
         opt.textContent = layer.label;
-        if (layer.id === meta.exploration.default_layer) opt.selected = true;
+        if (layer.id === bundle.default_layer) opt.selected = true;
         groups.get(groupName).appendChild(opt);
       }
     }
 
+    function isLayerDataset(mode) {
+      return (mode === "exploration" && hasExploration) || (mode === "eu5" && hasEu5);
+    }
+
     function setDatasetMode(mode) {
-      const exploration = mode === "exploration" && hasExploration;
-      document.getElementById("cropLabel").style.display = exploration ? "none" : "";
-      document.getElementById("waterLabel").style.display = exploration ? "none" : "";
-      document.getElementById("metricLabel").style.display = exploration ? "none" : "";
-      document.getElementById("layerLabel").style.display = exploration ? "" : "none";
-      if (!exploration) datasetSelect.value = "gaez";
+      let active = mode;
+      if (active === "exploration" && !hasExploration) active = "gaez";
+      if (active === "eu5" && !hasEu5) active = "gaez";
+      datasetSelect.value = active;
+      const layerMode = isLayerDataset(active);
+      document.getElementById("cropLabel").style.display = layerMode ? "none" : "";
+      document.getElementById("waterLabel").style.display = layerMode ? "none" : "";
+      document.getElementById("metricLabel").style.display = layerMode ? "none" : "";
+      document.getElementById("layerLabel").style.display = layerMode ? "" : "none";
+      if (layerMode) rebuildLayerOptions(active);
     }
     setDatasetMode("gaez");
 
@@ -447,6 +478,14 @@
       explorationAttrs = asTypedArray(Float32Array, expBytes);
       if (explorationAttrs.length !== n * meta.exploration.attribute_columns.length) {
         throw new Error("exploration attribute pack size mismatch");
+      }
+    }
+    if (hasEu5) {
+      status.textContent = "Loading EU5 attributes…";
+      const eu5Bytes = await loadGzip(meta.eu5.assets.attributes);
+      eu5Attrs = asTypedArray(Float32Array, eu5Bytes);
+      if (eu5Attrs.length !== n * meta.eu5.attribute_columns.length) {
+        throw new Error("EU5 attribute pack size mismatch");
       }
     }
 
@@ -607,15 +646,18 @@
     }
 
     function updateStatus() {
-      if (datasetSelect.value === "exploration" && hasExploration) {
-        const layer = meta.exploration.layers.find(l => l.id === layerSelect.value);
-        statusBase = `Exploration · ${layer ? layer.label : layerSelect.value}`;
+      const mode = datasetSelect.value;
+      if (isLayerDataset(mode)) {
+        const bundle = datasetBundle(mode);
+        const layer = bundle.layers.find(l => l.id === layerSelect.value);
+        const prefix = mode === "eu5" ? "EU5" : "Exploration";
+        statusBase = `${prefix} · ${layer ? layer.label : layerSelect.value}`;
       } else {
-      const crop = cropSelect.value;
-      const water = waterSelect.value;
-      const metricId = metricSelect.value;
-      const metric = meta.metrics.find(m => m.id === metricId);
-      statusBase = `${meta.crops.find(c => c.id === crop).label} · ${water} · ${metric.label}`;
+        const crop = cropSelect.value;
+        const water = waterSelect.value;
+        const metricId = metricSelect.value;
+        const metric = meta.metrics.find(m => m.id === metricId);
+        statusBase = `${meta.crops.find(c => c.id === crop).label} · ${water} · ${metric.label}`;
       }
       if (pinnedId) {
         status.textContent = `${statusBase} · Pinned: ${locations[pinnedId - 1]}`;
@@ -631,13 +673,16 @@
       }
       const tag = locations[id - 1];
       let label, unit, value, metricId;
-      if (datasetSelect.value === "exploration" && hasExploration) {
-        const layer = meta.exploration.layers.find(l => l.id === layerSelect.value);
-        const colIdx = meta.exploration.attribute_columns.indexOf(layerSelect.value);
+      const mode = datasetSelect.value;
+      if (isLayerDataset(mode)) {
+        const bundle = datasetBundle(mode);
+        const attrs = datasetAttrs(mode);
+        const layer = bundle.layers.find(l => l.id === layerSelect.value);
+        const colIdx = bundle.attribute_columns.indexOf(layerSelect.value);
         label = layer.label;
         unit = layer.unit;
         metricId = layer.id;
-        value = explorationAttrs[colIdx * n + (id - 1)];
+        value = attrs[colIdx * n + (id - 1)];
       } else {
         const crop = cropSelect.value;
         const water = waterSelect.value;
@@ -661,8 +706,10 @@
       const unitSuffix = (metricId === "irrigation_need" || metricId === "cycle_length" || metricId === "cycle_start" || metricId === "suitable_fraction")
         ? ""
         : ` ${unit}`;
-      const waterNote = (datasetSelect.value === "exploration") ? "exploration" : waterSelect.value;
-      tooltip.innerHTML = `<strong>${tag}</strong><br>${label}: ${formatValue(value, metricId)}${unitSuffix}<br>${waterNote}${pinNote}`;
+      const modeNote = mode === "exploration" ? "exploration"
+        : mode === "eu5" ? "EU5 1337 start"
+        : waterSelect.value;
+      tooltip.innerHTML = `<strong>${tag}</strong><br>${label}: ${formatValue(value, metricId)}${unitSuffix}<br>${modeNote}${pinNote}`;
     }
 
     function drawHighlight(id, color) {
@@ -720,19 +767,22 @@
 
     function recolor() {
       let metricId, metric, slice;
-      if (datasetSelect.value === "exploration" && hasExploration) {
-        const layer = meta.exploration.layers.find(l => l.id === layerSelect.value);
+      const mode = datasetSelect.value;
+      if (isLayerDataset(mode)) {
+        const bundle = datasetBundle(mode);
+        const attrs = datasetAttrs(mode);
+        const layer = bundle.layers.find(l => l.id === layerSelect.value);
         metricId = layer.id;
         metric = layer;
-        const colIdx = meta.exploration.attribute_columns.indexOf(layerSelect.value);
-        slice = explorationAttrs.subarray(colIdx * n, (colIdx + 1) * n);
+        const colIdx = bundle.attribute_columns.indexOf(layerSelect.value);
+        slice = attrs.subarray(colIdx * n, (colIdx + 1) * n);
       } else {
-      const crop = cropSelect.value;
-      const water = waterSelect.value;
-      metricId = metricSelect.value;
-      metric = meta.metrics.find(m => m.id === metricId);
-      const colIdx = columnIndex(crop, water, metricId);
-      slice = attributes.subarray(colIdx * n, (colIdx + 1) * n);
+        const crop = cropSelect.value;
+        const water = waterSelect.value;
+        metricId = metricSelect.value;
+        metric = meta.metrics.find(m => m.id === metricId);
+        const colIdx = columnIndex(crop, water, metricId);
+        slice = attributes.subarray(colIdx * n, (colIdx + 1) * n);
       }
       const includeZero = metric.zero_is_missing === false;
       const scaled = new Float32Array(slice.length);

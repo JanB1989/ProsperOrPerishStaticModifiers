@@ -170,6 +170,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
             {
                 "index": str(index),
                 "exploration": external_path is not None,
+                "eu5": external_path is not None,
             },
             indent=2,
         )

@@ -176,8 +176,8 @@ PILOT_LAYERS: tuple[ExternalLayerSpec, ...] = (
     ),
     ExternalLayerSpec(
         layer_id="eu5_population_total",
-        label="Population total (EU5 1337 start)",
-        group="EU5 population",
+        label="Population total (1337 start)",
+        group="Population",
         unit="people",
         source="eu5",
         table_column="eu5_population_total",
@@ -186,14 +186,21 @@ PILOT_LAYERS: tuple[ExternalLayerSpec, ...] = (
     ),
     ExternalLayerSpec(
         layer_id="eu5_population_density",
-        label="Population density (EU5 1337 start)",
-        group="EU5 population",
+        label="Population density (1337 start)",
+        group="Population",
         unit="people/km²",
         source="eu5",
         table_column="eu5_population_density",
         zero_is_missing=True,
         eu5_goods=(),
     ),
+)
+
+EXPLORATION_LAYERS: tuple[ExternalLayerSpec, ...] = tuple(
+    layer for layer in PILOT_LAYERS if layer.source != "eu5"
+)
+EU5_LAYERS: tuple[ExternalLayerSpec, ...] = tuple(
+    layer for layer in PILOT_LAYERS if layer.source == "eu5"
 )
 
 
