@@ -96,6 +96,8 @@ class ValidationReport:
     checks: dict[str, dict[str, object]]
     metrics: dict[str, float]
     tech_scale: float
+    # Historical breadbasket beliefs — reported only; do not gate training.
+    assumption_tests: dict[str, dict[str, object]] | None = None
 
 
 def _encode_categories(frame: pl.DataFrame) -> pl.DataFrame:
@@ -144,6 +146,7 @@ def assemble_feature_frame(
         "is_adjacent_to_lake",
         "calibrated_lat",
         "calibrated_lon",
+        "region",  # kept for post-hoc assumption tests; never a model feature
         *CANDIDATE_NUMERIC,
     ]
     frame = pl.read_parquet(candidates_path).select([c for c in cand_cols if c in cand_schema])
@@ -272,6 +275,57 @@ def suitability_class_from_fraction(fraction: np.ndarray) -> np.ndarray:
     return np.clip(classes, 1.0, 9.0)
 
 
+def _gaez_phys_raw_frame(feature_frame: pl.DataFrame) -> pl.DataFrame:
+    """Irrig-aware GAEZ wheat yield (kg/ha) used as soft-prior shape.
+
+    Prefer published GAEZ-wide kg/km² columns (÷100 → kg/ha); fall back to
+    candidate low-input yield columns when the wide metrics are missing.
+    """
+
+    cols = [LOCATION_TAG]
+    for c in (
+        "wheat_rainfed_yield_kg_dm_suitable_km2",
+        "wheat_irrigated_yield_kg_dm_suitable_km2",
+        "gaez_wheat_low_input_yield",
+        "gaez_wheat_irrigated_low_input_yield",
+        "has_river_f",
+    ):
+        if c in feature_frame.columns:
+            cols.append(c)
+    base = feature_frame.select(cols)
+
+    if "wheat_rainfed_yield_kg_dm_suitable_km2" in base.columns:
+        rain = pl.col("wheat_rainfed_yield_kg_dm_suitable_km2").fill_null(0.0) / float(
+            HECTARES_PER_KM2
+        )
+    elif "gaez_wheat_low_input_yield" in base.columns:
+        rain = pl.col("gaez_wheat_low_input_yield").fill_null(0.0)
+    else:
+        rain = pl.lit(0.0)
+
+    if "wheat_irrigated_yield_kg_dm_suitable_km2" in base.columns:
+        irr = pl.col("wheat_irrigated_yield_kg_dm_suitable_km2").fill_null(0.0) / float(
+            HECTARES_PER_KM2
+        )
+    elif "gaez_wheat_irrigated_low_input_yield" in base.columns:
+        irr = pl.col("gaez_wheat_irrigated_low_input_yield").fill_null(0.0)
+    else:
+        irr = rain
+
+    has_r = (
+        pl.col("has_river_f").fill_null(0.0)
+        if "has_river_f" in base.columns
+        else pl.lit(0.0)
+    )
+    return base.select(
+        LOCATION_TAG,
+        pl.when(has_r > 0.5)
+        .then(pl.max_horizontal(rain, irr))
+        .otherwise(rain)
+        .alias("phys_raw"),
+    )
+
+
 def build_training_table(
     feature_frame: pl.DataFrame,
     *,
@@ -333,22 +387,10 @@ def build_training_table(
         zeros = zeros.sample(n=2500, seed=1337)
     zeros = zeros.with_columns(pl.lit(0.25).alias("sample_weight_yield"))
 
-    # Soft global prior: PyAEZ (rainfed, else irrigated if river) scaled so that
-    # median on BAHS locations matches historic median — continuous, medieval level.
+    # Soft global prior: GAEZ low-input wheat shape (irrigated allowed where river),
+    # scaled so median on BAHS locations matches historic median. PyAEZ is feature-only.
     bahs_tags = historic_rows[LOCATION_TAG].unique()
-    phys = feature_frame.select(
-        LOCATION_TAG,
-        "pyaez_wheat_rainfed_yield",
-        "pyaez_wheat_irrigated_yield",
-        "has_river_f",
-    ).with_columns(
-        pl.when(pl.col("has_river_f") > 0.5)
-        .then(
-            pl.max_horizontal("pyaez_wheat_rainfed_yield", "pyaez_wheat_irrigated_yield")
-        )
-        .otherwise(pl.col("pyaez_wheat_rainfed_yield"))
-        .alias("phys_raw")
-    )
+    phys = _gaez_phys_raw_frame(feature_frame)
     phys_on_bahs = phys.join(bahs_tags.to_frame(LOCATION_TAG), on=LOCATION_TAG, how="inner")
     phys_med = float(phys_on_bahs.filter(pl.col("phys_raw") > 0)["phys_raw"].median() or 1.0)
     hist_med = float(bahs["yield_kg_ha"].median())
@@ -357,10 +399,9 @@ def build_training_table(
         phys.with_columns(
             (pl.col("phys_raw") * phys_scale).alias("label_yield_kg_ha"),
             pl.lit(0.12).alias("sample_weight_yield"),
-            pl.lit("physical_scaled").alias("label_source"),
+            pl.lit("gaez_scaled").alias("label_source"),
         )
         .filter(pl.col("label_yield_kg_ha") > 0)
-        # Drop locations already in hostile zero set.
         .join(zeros.select(LOCATION_TAG), on=LOCATION_TAG, how="anti")
     )
 
@@ -388,22 +429,35 @@ def build_training_table(
         how="diagonal",
     ).join(feature_frame, on=LOCATION_TAG, how="inner")
 
-    if "wheat_rainfed_suitable_fraction" in train.columns:
-        train = train.with_columns(
-            pl.when(pl.col("label_source") == "hostile_zero")
-            .then(0.0)
-            .otherwise(pl.col("wheat_rainfed_suitable_fraction").fill_null(0.5).clip(0.0, 1.0))
-            .alias("label_suitable_fraction"),
-            pl.lit(1.0).alias("sample_weight_suit"),
-        )
-    else:
-        train = train.with_columns(
-            pl.when(pl.col("label_source") == "hostile_zero")
-            .then(0.0)
-            .otherwise(0.75)
-            .alias("label_suitable_fraction"),
-            pl.lit(1.0).alias("sample_weight_suit"),
-        )
+    # Irrig-aware suitability targets (align with predict-time phys_suit).
+    rain_suit = (
+        pl.col("wheat_rainfed_suitable_fraction").fill_null(0.5)
+        if "wheat_rainfed_suitable_fraction" in train.columns
+        else pl.lit(0.5)
+    )
+    irr_suit = (
+        pl.col("wheat_irrigated_suitable_fraction").fill_null(0.0)
+        if "wheat_irrigated_suitable_fraction" in train.columns
+        else rain_suit
+    )
+    has_r = (
+        pl.col("has_river_f").fill_null(0.0)
+        if "has_river_f" in train.columns
+        else pl.lit(0.0)
+    )
+    soft_suit = (
+        pl.when(has_r > 0.5)
+        .then(pl.max_horizontal(rain_suit, irr_suit))
+        .otherwise(rain_suit)
+        .clip(0.0, 1.0)
+    )
+    train = train.with_columns(
+        pl.when(pl.col("label_source") == "hostile_zero")
+        .then(0.0)
+        .otherwise(soft_suit)
+        .alias("label_suitable_fraction"),
+        pl.lit(1.0).alias("sample_weight_suit"),
+    )
 
     loc_labels, hist_meta = expand_historic_yields_to_locations(bahs, geometry)
     meta = {
@@ -417,7 +471,8 @@ def build_training_table(
         "historic_median_kg_ha": hist_med,
         "seed_rate_kg_ha": WHEAT_SEED_RATE_KG_HA,
         "pretty_wheat_gross_kg_ha": PRETTY_WHEAT_GROSS_KG_HA,
-        "method": "bahs_historic_plus_scaled_physical",
+        "soft_prior_source": "gaez_low_input_wheat",
+        "method": "bahs_historic_plus_gaez_scaled_shape",
     }
     return train, loc_labels, meta
 
@@ -571,7 +626,7 @@ def validate_pnp_predictions(
     cv_r2_yield: float,
     loc_labels: pl.DataFrame | None = None,
 ) -> ValidationReport:
-    joined = frame.select(
+    select_cols = [
         LOCATION_TAG,
         "climate",
         "vegetation",
@@ -580,7 +635,10 @@ def validate_pnp_predictions(
         "calibrated_lon",
         "abs_lat",
         "has_river_f",
-    ).join(predictions, on=LOCATION_TAG, how="inner")
+    ]
+    if "region" in frame.columns:
+        select_cols.append("region")
+    joined = frame.select(select_cols).join(predictions, on=LOCATION_TAG, how="inner")
 
     checks: dict[str, dict[str, object]] = {}
 
@@ -686,6 +744,8 @@ def validate_pnp_predictions(
         "n_unique_10kg_bins": n_unique,
     }
 
+    assumption_tests = _assumption_tests(joined)
+
     passed = all(bool(v["passed"]) for v in checks.values())
     return ValidationReport(
         passed=passed,
@@ -697,9 +757,129 @@ def validate_pnp_predictions(
             "nw_europe_mean_kg_ha": nw_mean,
             "arctic_mean_kg_ha": arctic_mean,
             "n_unique_10kg_bins": float(n_unique),
+            "assumption_tests_passed": float(
+                sum(1 for v in assumption_tests.values() if v.get("passed"))
+            ),
+            "assumption_tests_total": float(len(assumption_tests)),
         },
         tech_scale=tech_scale,
+        assumption_tests=assumption_tests,
     )
+
+
+def _pos_median(df: pl.DataFrame) -> float | None:
+    pos = df.filter(pl.col("pred_yield_kg_ha") > 1.0)
+    if pos.height == 0:
+        return None
+    return float(pos["pred_yield_kg_ha"].median())
+
+
+def _assumption_tests(joined: pl.DataFrame) -> dict[str, dict[str, object]]:
+    """~1300 breadbasket beliefs as post-hoc tests (never used as labels)."""
+
+    tests: dict[str, dict[str, object]] = {}
+    global_pos = joined.filter(pl.col("pred_yield_kg_ha") > 1.0)
+    global_med = (
+        float(global_pos["pred_yield_kg_ha"].median()) if global_pos.height else 0.0
+    )
+
+    nile = joined.filter(
+        (pl.col("calibrated_lat") >= 21.0)
+        & (pl.col("calibrated_lat") <= 32.5)
+        & (pl.col("calibrated_lon") >= 29.0)
+        & (pl.col("calibrated_lon") <= 35.0)
+        & (pl.col("has_river_f") > 0.5)
+        & (pl.col("pred_yield_kg_ha") > 1.0)
+    )
+    britain_farm = joined.filter(
+        (pl.col("region") == "great_britain_region")
+        & (pl.col("vegetation") == "farmland")
+        & (pl.col("pred_yield_kg_ha") > 1.0)
+    ) if "region" in joined.columns else joined.filter(
+        (pl.col("calibrated_lat") >= 50.0)
+        & (pl.col("calibrated_lat") <= 59.0)
+        & (pl.col("calibrated_lon") >= -6.0)
+        & (pl.col("calibrated_lon") <= 2.0)
+        & (pl.col("vegetation") == "farmland")
+        & (pl.col("pred_yield_kg_ha") > 1.0)
+    )
+    nile_med = _pos_median(nile)
+    brit_med = _pos_median(britain_farm)
+    tests["T_nile_above_britain"] = {
+        "passed": bool(
+            nile_med is not None and brit_med is not None and nile_med > brit_med
+        ),
+        "nile_pos_median_kg_ha": nile_med,
+        "britain_farmland_pos_median_kg_ha": brit_med,
+        "n_nile": nile.height,
+        "n_britain": britain_farm.height,
+    }
+
+    def _region_pos(region: str) -> pl.DataFrame:
+        if "region" not in joined.columns:
+            return joined.head(0)
+        return joined.filter(
+            (pl.col("region") == region) & (pl.col("pred_yield_kg_ha") > 1.0)
+        )
+
+    france = _region_pos("france_region")
+    steppes = _region_pos("steppes_region")
+    sicily = joined.filter(
+        (pl.col("calibrated_lat") >= 36.5)
+        & (pl.col("calibrated_lat") <= 38.5)
+        & (pl.col("calibrated_lon") >= 12.0)
+        & (pl.col("calibrated_lon") <= 15.5)
+        & (pl.col("pred_yield_kg_ha") > 1.0)
+    )
+    for name, sub in (
+        ("T_france_upper_half", france),
+        ("T_steppes_upper_half", steppes),
+        ("T_sicily_upper_half", sicily),
+    ):
+        med = _pos_median(sub)
+        tests[name] = {
+            "passed": bool(med is not None and med >= global_med),
+            "pos_median_kg_ha": med,
+            "global_pos_median_kg_ha": global_med,
+            "n": sub.height,
+        }
+
+    # Old-World positives for quartile cuts (Afro-Eurasia approx: lon > -25).
+    old_world = global_pos.filter(pl.col("calibrated_lon") > -25.0)
+    ow_q25 = (
+        float(old_world["pred_yield_kg_ha"].quantile(0.25)) if old_world.height else 0.0
+    )
+
+    maghreb = _region_pos("maghreb_region")
+    punjab = joined.filter(
+        (pl.col("calibrated_lat") >= 27.0)
+        & (pl.col("calibrated_lat") <= 34.0)
+        & (pl.col("calibrated_lon") >= 70.0)
+        & (pl.col("calibrated_lon") <= 78.0)
+        & (pl.col("pred_yield_kg_ha") > 1.0)
+    )
+    for name, sub in (("T_maghreb_not_bottom_quartile", maghreb), ("T_punjab_not_bottom_quartile", punjab)):
+        med = _pos_median(sub)
+        tests[name] = {
+            "passed": bool(med is not None and med >= ow_q25),
+            "pos_median_kg_ha": med,
+            "old_world_pos_q25_kg_ha": ow_q25,
+            "n": sub.height,
+        }
+
+    indonesia = joined.filter(
+        (pl.col("calibrated_lat") >= -10.0)
+        & (pl.col("calibrated_lat") <= 10.0)
+        & (pl.col("calibrated_lon") >= 95.0)
+        & (pl.col("calibrated_lon") <= 140.0)
+    )
+    indo_mean = float(indonesia["pred_yield_kg_ha"].mean() or 0.0)
+    tests["T_indonesia_near_zero"] = {
+        "passed": indo_mean < 80.0,
+        "mean_kg_ha": indo_mean,
+        "n": indonesia.height,
+    }
+    return tests
 
 
 def train_and_predict_pnp_wheat(
@@ -755,7 +935,8 @@ def train_and_predict_pnp_wheat(
         "validation_passed": report.passed,
         "validation_checks": report.checks,
         "validation_metrics": report.metrics,
-        "method": "bahs_historic_plus_scaled_physical",
+        "assumption_tests": report.assumption_tests or {},
+        "method": "bahs_historic_plus_gaez_scaled_shape",
     }
     (model_dir / "pnp_wheat_model_card.json").write_text(
         json.dumps(card, indent=2), encoding="utf-8"

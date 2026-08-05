@@ -1,15 +1,15 @@
-﻿# P&P wheat — 1337 historic-supervised mapmodes
+﻿# P&P wheat — 1337 historic + GAEZ-shape mapmodes
 
 ## Objective
 
-1. Merge historic yield data that matches EU5’s wheat definition.
-2. Convert / scale onto a medieval kg/ha footing (Pretty–BAHS calibration).
-3. Train a model of **yield from location attributes**.
-4. Deploy that function to the rest of the world.
+1. Use historic yield observations (BAHS) as **hard labels**.
+2. Use modern GAEZ low-input wheat as the **soft geographic shape**, scaled to medieval absolute intensity.
+3. Train yield from location **attributes** (GAEZ/PyAEZ/climate/soil/water as features).
+4. Treat historical breadbasket beliefs as **post-hoc assumption tests**, not training recipes.
 
-No EU5 region multipliers. No constant “recipe plateaus.”
+No EU5 region multipliers. No constant “recipe plateaus.” No hard-coded Nile/Punjab kg/ha targets.
 
-## Historic training set
+## Historic hard labels
 
 Source: BAHS *Three centuries of English crop yields* (`bahs_medieval_yield_observations.parquet`).
 
@@ -17,30 +17,28 @@ Source: BAHS *Three centuries of English crop yields* (`bahs_medieval_yield_obse
 |------|--------|
 | Filter | `model_crop == wheat`, not mixtures/aggregates, years 1211–1450 |
 | Unit | Yield-per-seed → kg/ha via Pretty (1990) seed rate: **515 ÷ 4.0 = 128.75 kg seed/ha** |
-| Geography | Each observation joins to arable vegetation locations in its mapped `eu5_province` (~18 English provinces, ~69 locations) |
+| Geography | Each observation joins to arable vegetation locations in its mapped `eu5_province` |
 | Negatives | Arctic, tropical jungle, desert-without-river → y = 0 |
-| Soft prior | PyAEZ wheat (irrigated allowed where `has_river`) **scaled** so median on BAHS locations matches historic median — continuous global coverage at medieval intensity |
 
-Hard BAHS rows are high weight; soft physical rows are low weight. No lat/lon, no Europe-only layers, no climate one-hots (those memorized England).
+## Soft prior (data shape, not lore)
 
-Audit artifacts: `artifacts/pnp_models/pnp_wheat_historic_labels.parquet`.
+GAEZ wheat yield (published kg/suitable-km² ÷ 100 → kg/ha):
+
+- no river → rainfed
+- `has_river` → `max(rainfed, irrigated)`
+
+Scale so median on BAHS locations matches the historic BAHS median. Soft weight ~0.12; BAHS hard rows stay high weight. **PyAEZ is a feature only**, not the soft teacher.
+
+Suitability soft targets are irrig-aware the same way.
 
 ## Features
 
-Curated attributes from `location_candidates` + GAEZ wide + external + PyAEZ-as-feature (climate/soil/water/GAEZ analogues). **Never** `region` / `super_region`.
-
-## Model
-
-Two `HistGradientBoostingRegressor`s trained **only** on historic (+ hostile-zero) rows; then predict all locations.
-
-- `production_density = yield × suitable_fraction`
-- Hostile climates soft-zeroed at predict time
+Curated attributes from `location_candidates` + GAEZ wide + external + PyAEZ-as-feature. **Never** `region` / `super_region` as model inputs (`region` may be carried for assumption tests only).
 
 ## Validation
 
-- A*: arctic / desert-no-river / tropics / NW Europe / BAHS median band / CV R²
-- H*: fit on labeled historic locations
-- D*: enough distinct 10 kg/ha bins (continuous distribution check)
+- **A\*/H\*/D\*** physical gates gate the build (arctic / desert / tropics / NW Europe / BAHS band / CV / historic fit / continuity).
+- **T\*** assumption tests report whether the map matches ~1300 breadbasket expectations (Nile > Britain farmland; France/steppes/Sicily upper half; Maghreb/Punjab not bottom Old-World quartile; Indonesia near zero). They do **not** write labels and do **not** fail the build.
 
 ## Outputs
 
@@ -53,4 +51,4 @@ Two `HistGradientBoostingRegressor`s trained **only** on historic (+ hostile-zer
 
 ## Limits
 
-Historic labels are **England-centric**. The global map is an attribute extrapolation from medieval English wheat yields plus hostile zeros. Enriching with more non-English absolute yield series (when mappable to `location_tag`) is the way to improve coverage — append observations, retrain.
+Hard absolute yields are still England-centric. Global rank-order comes from GAEZ shape at medieval scale. Failed T\* tests mean the data teacher disagrees with historical lore — fix by adding mappable non-English absolute yields, not by baking lore into labels.

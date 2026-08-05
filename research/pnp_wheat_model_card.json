@@ -55,135 +55,135 @@
     "veg_woods"
   ],
   "n_features": 53,
-  "cv_r2_yield": 0.5010430356089116,
-  "n_train_rows": 56716,
-  "train_yield_mean": 468.4169629142528,
-  "train_yield_median": 437.75,
+  "cv_r2_yield": 0.5343901707092126,
+  "n_train_rows": 58302,
+  "train_yield_mean": 466.95705369075694,
+  "train_yield_median": 428.7375,
   "feature_importance_top": [
     {
-      "feature": "pyaez_wheat_irrigated_yield",
-      "importance_mean": 0.2017021206292493,
-      "importance_std": 0.0023695122708631733
-    },
-    {
-      "feature": "pyaez_wheat_rainfed_yield",
-      "importance_mean": 0.13602056047153083,
-      "importance_std": 0.004778638820505141
-    },
-    {
-      "feature": "has_river_f",
-      "importance_mean": 0.0666878367797083,
-      "importance_std": 0.007521263252146848
-    },
-    {
-      "feature": "barley_rainfed_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.02837531847339511,
-      "importance_std": 0.0022326548419411884
-    },
-    {
-      "feature": "gaez_irrigated_wheat_potential",
-      "importance_mean": 0.02611355141459404,
-      "importance_std": 0.0025088982512022698
-    },
-    {
       "feature": "wheat_rainfed_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.024946905205013692,
-      "importance_std": 0.0018780972522956798
-    },
-    {
-      "feature": "oats_rainfed_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.014115589590951216,
-      "importance_std": 0.0032121222239202495
-    },
-    {
-      "feature": "chelsa_precipitation_seasonality",
-      "importance_mean": 0.00979830393214387,
-      "importance_std": 0.001026283929583837
-    },
-    {
-      "feature": "severe_winter",
-      "importance_mean": 0.006455358406291051,
-      "importance_std": 0.001374101378314373
-    },
-    {
-      "feature": "gaez_barley_low_input_yield",
-      "importance_mean": 0.0057329454467169305,
-      "importance_std": 0.0013220018574946976
+      "importance_mean": 0.20088164864664354,
+      "importance_std": 0.0033738612794061798
     },
     {
       "feature": "wheat_irrigated_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.005047787178289936,
-      "importance_std": 0.0009964303835153978
+      "importance_mean": 0.17246063301040498,
+      "importance_std": 0.0073319650213657895
     },
     {
-      "feature": "chelsa_annual_mean_temperature",
-      "importance_mean": 0.00437815916452633,
-      "importance_std": 0.0010380903443779948
+      "feature": "has_river_f",
+      "importance_mean": 0.06004864882464239,
+      "importance_std": 0.0017123141342140532
+    },
+    {
+      "feature": "barley_rainfed_yield_kg_dm_suitable_km2",
+      "importance_mean": 0.024473123700459787,
+      "importance_std": 0.0028394501244674505
+    },
+    {
+      "feature": "gaez_irrigated_wheat_potential",
+      "importance_mean": 0.02111424857502836,
+      "importance_std": 0.0018054959118429317
+    },
+    {
+      "feature": "oats_rainfed_yield_kg_dm_suitable_km2",
+      "importance_mean": 0.009698056456106524,
+      "importance_std": 0.0019093702275565238
+    },
+    {
+      "feature": "severe_winter",
+      "importance_mean": 0.008046080434250702,
+      "importance_std": 0.0014609261305622893
+    },
+    {
+      "feature": "pyaez_wheat_rainfed_yield",
+      "importance_mean": 0.005783346190317451,
+      "importance_std": 0.00043134359022427207
+    },
+    {
+      "feature": "chelsa_precipitation_seasonality",
+      "importance_mean": 0.005531498634676946,
+      "importance_std": 0.002452897976437579
+    },
+    {
+      "feature": "pyaez_wheat_irrigated_yield",
+      "importance_mean": 0.005404630239986469,
+      "importance_std": 0.0009631860358102636
     },
     {
       "feature": "spam_wheat_rainfed_yield",
-      "importance_mean": 0.004025625531095728,
-      "importance_std": 0.0011863150511048786
+      "importance_mean": 0.005156103457778727,
+      "importance_std": 0.0007719534981810249
     },
     {
-      "feature": "hyde_pop_density_1300",
-      "importance_mean": 0.0031299843710494435,
-      "importance_std": 0.0008983886934132301
-    },
-    {
-      "feature": "rye_rainfed_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.002883216223424384,
-      "importance_std": 0.0004725013559376276
-    },
-    {
-      "feature": "chelsa_annual_precipitation",
-      "importance_mean": 0.0026035726610137144,
-      "importance_std": 0.0004920225709132752
-    },
-    {
-      "feature": "aridity_proxy",
-      "importance_mean": 0.00245227354695407,
-      "importance_std": 0.00017551924283005406
+      "feature": "gaez_barley_low_input_yield",
+      "importance_mean": 0.005078756466963458,
+      "importance_std": 0.0010004788104203686
     },
     {
       "feature": "temp_distance_from_optimum",
-      "importance_mean": 0.0020068785765136876,
-      "importance_std": 0.0008333968783259444
+      "importance_mean": 0.0033133539635987197,
+      "importance_std": 0.0005606926436831287
     },
     {
-      "feature": "veg_desert",
-      "importance_mean": 0.001815923056743468,
-      "importance_std": 0.0005471155373707498
+      "feature": "aridity_proxy",
+      "importance_mean": 0.0022689207038998904,
+      "importance_std": 0.000645475496851771
     },
     {
-      "feature": "gaez_wheat_irrigated_low_input_yield_suitable_fraction",
-      "importance_mean": 0.0015638766631758672,
-      "importance_std": 0.0001816873517910887
+      "feature": "rye_rainfed_yield_kg_dm_suitable_km2",
+      "importance_mean": 0.0022399955847984543,
+      "importance_std": 0.0008999959570541378
     },
     {
       "feature": "gaez_wheat_irrigated_low_input_yield",
-      "importance_mean": 0.0014812187826772627,
-      "importance_std": 0.00040826218042891
+      "importance_mean": 0.0019033059590841117,
+      "importance_std": 0.00026361611983980593
     },
     {
-      "feature": "farm_system_production_scale_p50",
-      "importance_mean": 0.0011520016493807295,
-      "importance_std": 0.0005261556721041767
-    },
-    {
-      "feature": "gaez_wheat_land_yield",
-      "importance_mean": 0.0009788255267478008,
-      "importance_std": 0.0006351687837895082
+      "feature": "hyde_pop_density_1300",
+      "importance_mean": 0.0014221658211255872,
+      "importance_std": 0.0010408478079733188
     },
     {
       "feature": "veg_jungle",
-      "importance_mean": 0.0008659578118267175,
-      "importance_std": 0.00027440555814485436
+      "importance_mean": 0.0012562666992486649,
+      "importance_std": 0.00013338691610856855
+    },
+    {
+      "feature": "gaez_wheat_land_yield",
+      "importance_mean": 0.001217876390941064,
+      "importance_std": 0.0010280680870782962
+    },
+    {
+      "feature": "chelsa_annual_mean_temperature",
+      "importance_mean": 0.0011177337608726245,
+      "importance_std": 0.0005878554274088513
+    },
+    {
+      "feature": "farm_system_production_scale_p50",
+      "importance_mean": 0.0008124383053994544,
+      "importance_std": 0.000852561892517978
+    },
+    {
+      "feature": "spam_wheat_rainfed_harvested_area",
+      "importance_mean": 0.0007021177169295179,
+      "importance_std": 0.001017930469697366
+    },
+    {
+      "feature": "gaez_wheat_irrigated_low_input_yield_suitable_fraction",
+      "importance_mean": 0.00046026135774238086,
+      "importance_std": 0.0003754415571913346
+    },
+    {
+      "feature": "chelsa_annual_precipitation",
+      "importance_mean": 0.00044860097252621967,
+      "importance_std": 0.0003524946727522531
     },
     {
       "feature": "terrain_irrigable_fraction",
-      "importance_mean": 0.0007707956922642367,
-      "importance_std": 0.000724320939081904
+      "importance_mean": 0.0004410453107138723,
+      "importance_std": 0.0002506541929219624
     }
   ],
   "bahs_wheat_gross_kg_ha": 515.0,
@@ -201,11 +201,12 @@
   "n_provinces": 18,
   "n_historic_train_rows": 40382,
   "n_hostile_train_rows": 2500,
-  "n_physical_soft_rows": 13834,
-  "physical_scale_to_bahs": 0.28520569620253167,
-  "physical_median_on_bahs": 1580.0,
+  "n_physical_soft_rows": 15420,
+  "physical_scale_to_bahs": 0.28426835242572723,
+  "physical_median_on_bahs": 1585.2098770570599,
   "historic_median_kg_ha": 450.625,
-  "method": "bahs_historic_plus_scaled_physical",
+  "soft_prior_source": "gaez_low_input_wheat",
+  "method": "bahs_historic_plus_gaez_scaled_shape",
   "validation_passed": true,
   "validation_checks": {
     "A1_arctic_near_zero": {
@@ -221,42 +222,88 @@
     "A3_tropical_below_temperate": {
       "passed": true,
       "tropical_mean_kg_ha": 0.0,
-      "temperate_mean_kg_ha": 448.35426351243456
+      "temperate_mean_kg_ha": 435.7634565172043
     },
     "A4_nw_europe_high": {
       "passed": true,
-      "nw_europe_mean_kg_ha": 503.3804370392977,
+      "nw_europe_mean_kg_ha": 488.5166908771347,
       "n": 2420
     },
     "A5_bahs_median_band": {
       "passed": true,
-      "nw_farmland_positive_median_kg_ha": 609.9648819865523,
+      "nw_farmland_positive_median_kg_ha": 593.967240957843,
       "target_kg_ha": 515.0,
       "n": 93
     },
     "A6_model_fit": {
       "passed": true,
-      "cv_r2_yield": 0.5010430356089116,
+      "cv_r2_yield": 0.5343901707092126,
       "note": "GroupKFold by location_tag"
     },
     "H_historic_location_fit": {
       "passed": true,
-      "mean_abs_pct_err": 0.03394862202751467,
+      "mean_abs_pct_err": 0.03336119205965427,
       "n": 69,
-      "pred_median": 472.59299689984357,
+      "pred_median": 474.14905016448995,
       "label_median": 441.6125
     },
     "D_continuous_enough": {
       "passed": true,
-      "n_unique_10kg_bins": 86
+      "n_unique_10kg_bins": 84
     }
   },
   "validation_metrics": {
     "tech_scale": 1.0,
-    "cv_r2_yield": 0.5010430356089116,
-    "nw_farmland_positive_median_kg_ha": 609.9648819865523,
-    "nw_europe_mean_kg_ha": 503.3804370392977,
+    "cv_r2_yield": 0.5343901707092126,
+    "nw_farmland_positive_median_kg_ha": 593.967240957843,
+    "nw_europe_mean_kg_ha": 488.5166908771347,
     "arctic_mean_kg_ha": 0.0,
-    "n_unique_10kg_bins": 86.0
+    "n_unique_10kg_bins": 84.0,
+    "assumption_tests_passed": 6.0,
+    "assumption_tests_total": 7.0
+  },
+  "assumption_tests": {
+    "T_nile_above_britain": {
+      "passed": false,
+      "nile_pos_median_kg_ha": 258.3175772518232,
+      "britain_farmland_pos_median_kg_ha": 395.5609894238221,
+      "n_nile": 47,
+      "n_britain": 16
+    },
+    "T_france_upper_half": {
+      "passed": true,
+      "pos_median_kg_ha": 551.0471802052841,
+      "global_pos_median_kg_ha": 316.6380249546742,
+      "n": 446
+    },
+    "T_steppes_upper_half": {
+      "passed": true,
+      "pos_median_kg_ha": 610.6641732131498,
+      "global_pos_median_kg_ha": 316.6380249546742,
+      "n": 318
+    },
+    "T_sicily_upper_half": {
+      "passed": true,
+      "pos_median_kg_ha": 481.1596524960555,
+      "global_pos_median_kg_ha": 316.6380249546742,
+      "n": 22
+    },
+    "T_maghreb_not_bottom_quartile": {
+      "passed": true,
+      "pos_median_kg_ha": 272.95510620238736,
+      "old_world_pos_q25_kg_ha": 118.11217967836753,
+      "n": 286
+    },
+    "T_punjab_not_bottom_quartile": {
+      "passed": true,
+      "pos_median_kg_ha": 343.163947226044,
+      "old_world_pos_q25_kg_ha": 118.11217967836753,
+      "n": 164
+    },
+    "T_indonesia_near_zero": {
+      "passed": true,
+      "mean_kg_ha": 1.0630766335362343,
+      "n": 581
+    }
   }
 }
