@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 WATER_MODES = ("rainfed", "irrigated")
-# GAEZ YLX is kg dry matter per hectare of total cell area; publish as per km².
+# GAEZ YXX/YLX and MapSPAM yields are native per hectare; publish as per km².
 HECTARES_PER_KM2 = 100.0
 GAEZ_V5_BASE = (
     "https://storage.googleapis.com/fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-YXX"
@@ -22,7 +22,15 @@ METRICS = (
         True,
         WATER_MODES,
     ),
-    ("yield", "yield_kg_dm_ha", "Yield", "kg DM / suitable ha", "Potential", True, WATER_MODES),
+    (
+        "yield",
+        "yield_kg_dm_suitable_km2",
+        "Yield",
+        "kg DM / suitable km²",
+        "Potential",
+        True,
+        WATER_MODES,
+    ),
     ("suitable_fraction", "suitable_fraction", "Suitable fraction", "fraction", "Potential", True, WATER_MODES),
     ("suitability_index", "suitability_index", "Suitability class", "class 1 best → 9 worst", "Potential", True, WATER_MODES),
     ("irrigation_need", "net_irrigation_requirement_mm", "Irrigation need", "mm", "Water & calendar", False, ("irrigated",)),

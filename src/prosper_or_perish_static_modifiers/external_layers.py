@@ -23,6 +23,10 @@ class ExternalLayerSpec:
     hyde_year: int | None = None  # CE year for HYDE popd (e.g. 1300)
     # WorldPop mosaic is people/pixel; convert to people/km² using cell area at sample lat.
     count_to_density: bool = False
+    # Native MapSPAM/GAEZ-style per-hectare rates → per km² (×100).
+    per_ha_to_per_km2: bool = False
+    # Native area in hectares → km² (÷100), e.g. MapSPAM harvested ha/cell.
+    ha_to_km2: bool = False
     # Table-backed layers (no raster sample); column is layer_id on the EU5 pop frame.
     table_column: str | None = None
     eu5_goods: tuple[str, ...] = ()
@@ -34,66 +38,72 @@ PILOT_LAYERS: tuple[ExternalLayerSpec, ...] = (
         layer_id="spam_wheat_rainfed_yield",
         label="Wheat yield (MapSPAM rainfed)",
         group="MapSPAM observed",
-        unit="t/ha",
+        unit="t/km²",
         source="spam",
         spam_variable="Y",
         spam_crop_code="WHEA",
         spam_system="R",
+        per_ha_to_per_km2=True,
         eu5_goods=("wheat",),
     ),
     ExternalLayerSpec(
         layer_id="spam_maize_rainfed_yield",
         label="Maize yield (MapSPAM rainfed)",
         group="MapSPAM observed",
-        unit="t/ha",
+        unit="t/km²",
         source="spam",
         spam_variable="Y",
         spam_crop_code="MAIZ",
         spam_system="R",
+        per_ha_to_per_km2=True,
         eu5_goods=("maize",),
     ),
     ExternalLayerSpec(
         layer_id="spam_cotton_rainfed_yield",
         label="Cotton yield (MapSPAM rainfed)",
         group="MapSPAM observed",
-        unit="t/ha",
+        unit="t/km²",
         source="spam",
         spam_variable="Y",
         spam_crop_code="COTT",
         spam_system="R",
+        per_ha_to_per_km2=True,
         eu5_goods=("cotton",),
     ),
     ExternalLayerSpec(
         layer_id="spam_wheat_rainfed_harvested_area",
         label="Wheat harvested area (MapSPAM rainfed)",
         group="MapSPAM observed",
-        unit="ha/cell",
+        unit="km²/cell",
         source="spam",
         spam_variable="H",
         spam_crop_code="WHEA",
         spam_system="R",
+        ha_to_km2=True,
         eu5_goods=("wheat",),
     ),
     ExternalLayerSpec(
         layer_id="spam_maize_rainfed_harvested_area",
         label="Maize harvested area (MapSPAM rainfed)",
         group="MapSPAM observed",
-        unit="ha/cell",
+        unit="km²/cell",
         source="spam",
         spam_variable="H",
         spam_crop_code="MAIZ",
         spam_system="R",
+        ha_to_km2=True,
         eu5_goods=("maize",),
     ),
     ExternalLayerSpec(
         layer_id="spam_cotton_rainfed_harvested_area",
         label="Cotton harvested area (MapSPAM rainfed)",
         group="MapSPAM observed",
-        unit="ha/cell",
+        unit="km²/cell",
         source="spam",
         spam_variable="H",
         spam_crop_code="COTT",
         spam_system="R",
+        ha_to_km2=True,
         eu5_goods=("cotton",),
     ),
     ExternalLayerSpec(

@@ -12,7 +12,7 @@ Standalone **uv / Python** ETL that samples FAO GAEZ v5 (and exploration) raster
 
 See [research/dataset_catalog.md](research/dataset_catalog.md) for the full external-dataset inventory and ML feature/label roles.
 
-Production **density** is the default map metric (kg DM / km² of total location area) so sparse suitability does not light up the map as if it were strong production. Color scaling is per-layer (98th percentile).
+Production **density** and **yield** are published per km² (native GAEZ/MapSPAM hectare rates ×100). Color scaling is per-layer (98th percentile).
 
 GAEZ HP8100 covers **1981–2000** (modern diagnostic climate), not circa-1337 reconstruction.
 

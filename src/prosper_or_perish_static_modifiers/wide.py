@@ -184,9 +184,18 @@ def build_wide_from_labels(
         LOCATION_TAG,
         "crop",
         "water_mode",
-        "yield_kg_dm_ha",
         "suitable_fraction",
     ]
+    yield_src = None
+    if "yield_kg_dm_suitable_km2" in labels.columns:
+        yield_src = "yield_kg_dm_suitable_km2"
+    elif "yield_kg_dm_ha" in labels.columns:
+        yield_src = "yield_kg_dm_ha"
+    else:
+        raise ValueError(
+            "labels parquet missing yield column "
+            "(yield_kg_dm_suitable_km2 or yield_kg_dm_ha)"
+        )
     density_src = None
     if "production_density_kg_dm_total_km2" in labels.columns:
         density_src = "production_density_kg_dm_total_km2"
@@ -207,8 +216,18 @@ def build_wide_from_labels(
         "crop_cycle_length_days",
         "suitability_index",
     ]
-    keep = required + [density_src] + [col for col in optional if col in labels.columns]
+    keep = (
+        required
+        + [yield_src, density_src]
+        + [col for col in optional if col in labels.columns]
+    )
     labels = labels.select(keep)
+    if yield_src == "yield_kg_dm_ha":
+        labels = labels.with_columns(
+            (pl.col("yield_kg_dm_ha") * HECTARES_PER_KM2).alias(
+                "yield_kg_dm_suitable_km2"
+            )
+        ).drop("yield_kg_dm_ha")
     if density_src == "production_density_kg_dm_total_ha":
         labels = labels.with_columns(
             (pl.col("production_density_kg_dm_total_ha") * HECTARES_PER_KM2).alias(

@@ -45,12 +45,12 @@ Later these become **ML features** (biophysical potential / climate / soil) and 
 
 | Layer id | Source | Metric | Notes |
 |----------|--------|--------|-------|
-| `spam_wheat_rainfed_yield` | MapSPAM 2010 | yield | Observed rainfed wheat |
-| `spam_maize_rainfed_yield` | MapSPAM 2010 | yield | Observed rainfed maize |
-| `spam_cotton_rainfed_yield` | MapSPAM 2010 | yield | Observed rainfed cotton (GAEZ gap) |
-| `spam_wheat_rainfed_harvested_area` | MapSPAM 2010 | harvested area | Share/area intensity |
-| `spam_maize_rainfed_harvested_area` | MapSPAM 2010 | harvested area | |
-| `spam_cotton_rainfed_harvested_area` | MapSPAM 2010 | harvested area | |
+| `spam_wheat_rainfed_yield` | MapSPAM 2010 | yield t/km² | Observed rainfed wheat (native t/ha ×100) |
+| `spam_maize_rainfed_yield` | MapSPAM 2010 | yield t/km² | Observed rainfed maize |
+| `spam_cotton_rainfed_yield` | MapSPAM 2010 | yield t/km² | Observed rainfed cotton (GAEZ gap) |
+| `spam_wheat_rainfed_harvested_area` | MapSPAM 2010 | km²/cell | Harvested area (native ha/cell ÷100) |
+| `spam_maize_rainfed_harvested_area` | MapSPAM 2010 | km²/cell | |
+| `spam_cotton_rainfed_harvested_area` | MapSPAM 2010 | km²/cell | |
 | `glw_cattle_density` | GLW4 D-AW CTX | heads/km² | Livestock |
 | `glw_sheep_density` | GLW4 D-AW SHX | heads/km² | Wool proxy |
 | `europe_ag_suitability_1500` | ECWMZS suit.tif band 1500 | index 0–1 | Closest year to EU5 start in dataset |

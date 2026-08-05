@@ -49,7 +49,7 @@ def test_wide_pivot_column_naming() -> None:
             "location_tag": ["a", "a", "b", "b"],
             "crop": ["wheat", "wheat", "wheat", "wheat"],
             "water_mode": ["rainfed", "irrigated", "rainfed", "irrigated"],
-            "yield_kg_dm_ha": [1.0, 2.0, 3.0, 4.0],
+            "yield_kg_dm_suitable_km2": [1.0, 2.0, 3.0, 4.0],
             "production_density_kg_dm_total_km2": [10.0, 20.0, 30.0, 40.0],
             "suitable_fraction": [0.1, 0.2, 0.3, 0.4],
             "net_irrigation_requirement_mm": [0.0, 50.0, 0.0, 80.0],
@@ -60,7 +60,7 @@ def test_wide_pivot_column_naming() -> None:
     )
     wide = pivot_location_metrics(long, crops=["wheat"])
     assert metric_column("wheat", "rainfed", "production_density_kg_dm_total_km2") in wide.columns
-    assert metric_column("wheat", "irrigated", "yield_kg_dm_ha") in wide.columns
+    assert metric_column("wheat", "irrigated", "yield_kg_dm_suitable_km2") in wide.columns
     assert metric_column("wheat", "irrigated", "net_irrigation_requirement_mm") in wide.columns
     assert metric_column("wheat", "irrigated", "suitability_index") in wide.columns
     row_a = wide.filter(pl.col("location_tag") == "a").to_dicts()[0]
@@ -99,6 +99,9 @@ def test_wide_from_labels_converts_ha_density_to_km2(tmp_path: Path) -> None:
     wide = pl.read_parquet(out)
     assert wide["wheat_rainfed_production_density_kg_dm_total_km2"][0] == pytest.approx(
         3.0 * HECTARES_PER_KM2
+    )
+    assert wide["wheat_rainfed_yield_kg_dm_suitable_km2"][0] == pytest.approx(
+        1.0 * HECTARES_PER_KM2
     )
 
 

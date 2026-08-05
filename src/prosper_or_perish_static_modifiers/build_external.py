@@ -6,6 +6,7 @@ import numpy as np
 import polars as pl
 import rasterio
 
+from prosper_or_perish_static_modifiers.crops import HECTARES_PER_KM2
 from prosper_or_perish_static_modifiers.eu5_population import build_eu5_population_layers
 from prosper_or_perish_static_modifiers.external_layers import (
     PILOT_LAYERS,
@@ -125,6 +126,14 @@ def build_external_wide(
                 sample_points,
                 value_column=layer.layer_id,
                 raster_path=raster_path,
+            )
+        if layer.per_ha_to_per_km2:
+            sampled = sampled.with_columns(
+                (pl.col(layer.layer_id) * HECTARES_PER_KM2).alias(layer.layer_id)
+            )
+        if layer.ha_to_km2:
+            sampled = sampled.with_columns(
+                (pl.col(layer.layer_id) / HECTARES_PER_KM2).alias(layer.layer_id)
             )
         sampled = sampled.join(base_pts, on=[LOCATION_TAG, "sample_index"], how="left")
         loc = _aggregate_layer_to_locations(sampled, value_column=layer.layer_id)
