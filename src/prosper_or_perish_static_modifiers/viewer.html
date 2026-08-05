@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -226,8 +226,15 @@
     </div>
   </main>
   <script>
-  const META_URL = "data/meta.json";
+  const ASSET_VERSION = "__ASSET_VERSION__";
+  const META_URL = `data/meta.json?v=${ASSET_VERSION}`;
   const MAX_SCALE = 16;
+
+  function assetUrl(path) {
+    if (!path) return path;
+    const sep = path.includes("?") ? "&" : "?";
+    return `${path}${sep}v=${ASSET_VERSION}`;
+  }
 
   function viridis(t) {
     const stops = [
@@ -453,7 +460,7 @@
 
     status.textContent = "Loading location id map…";
 
-    const idBytes = await loadGzip(meta.assets.location_id_map);
+    const idBytes = await loadGzip(assetUrl(meta.assets.location_id_map));
     const idMap = asTypedArray(Uint16Array, idBytes);
     const mapW = meta.map.width;
     const mapH = meta.map.height;
@@ -463,8 +470,8 @@
 
     status.textContent = "Loading attributes…";
     const [attrBytes, locBytes] = await Promise.all([
-      loadGzip(meta.assets.attributes),
-      loadGzip(meta.assets.locations),
+      loadGzip(assetUrl(meta.assets.attributes)),
+      loadGzip(assetUrl(meta.assets.locations)),
     ]);
     const attributes = asTypedArray(Float32Array, attrBytes);
     const locations = JSON.parse(new TextDecoder().decode(locBytes));
@@ -475,7 +482,7 @@
     }
     if (hasExploration) {
       status.textContent = "Loading exploration attributes…";
-      const expBytes = await loadGzip(meta.exploration.assets.attributes);
+      const expBytes = await loadGzip(assetUrl(meta.exploration.assets.attributes));
       explorationAttrs = asTypedArray(Float32Array, expBytes);
       if (explorationAttrs.length !== n * meta.exploration.attribute_columns.length) {
         throw new Error("exploration attribute pack size mismatch");
@@ -483,7 +490,7 @@
     }
     if (hasEu5) {
       status.textContent = "Loading EU5 attributes…";
-      const eu5Bytes = await loadGzip(meta.eu5.assets.attributes);
+      const eu5Bytes = await loadGzip(assetUrl(meta.eu5.assets.attributes));
       eu5Attrs = asTypedArray(Float32Array, eu5Bytes);
       if (eu5Attrs.length !== n * meta.eu5.attribute_columns.length) {
         throw new Error("EU5 attribute pack size mismatch");

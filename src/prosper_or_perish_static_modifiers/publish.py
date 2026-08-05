@@ -1,8 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import gzip
 import json
 import math
+import time
 from pathlib import Path
 
 import numpy as np
@@ -22,8 +23,10 @@ from prosper_or_perish_static_modifiers.external_layers import (
 from prosper_or_perish_static_modifiers.geometry import LOCATION_TAG
 
 
-def load_viewer_html() -> str:
-    return (Path(__file__).with_name("viewer.html")).read_text(encoding="utf-8")
+def load_viewer_html(*, asset_version: str | None = None) -> str:
+    html = (Path(__file__).with_name("viewer.html")).read_text(encoding="utf-8")
+    version = asset_version or str(int(time.time()))
+    return html.replace("__ASSET_VERSION__", version)
 
 
 def _finite_or_nan(values: list[float | None]) -> np.ndarray:
@@ -171,5 +174,8 @@ def publish_docs(
         "eu5": eu5,
     }
     (data_dir / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    (docs_dir / "index.html").write_text(load_viewer_html(), encoding="utf-8")
+    (docs_dir / "index.html").write_text(
+        load_viewer_html(asset_version=str(int(time.time()))),
+        encoding="utf-8",
+    )
     return docs_dir / "index.html"
