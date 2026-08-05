@@ -1,6 +1,5 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-import re
 from pathlib import Path
 
 import polars as pl
@@ -10,74 +9,10 @@ from prosper_or_perish_static_modifiers.geometry import LOCATION_TAG
 # EU5 stores pop size in thousands of people (1 game unit = 1000 people).
 PEOPLE_PER_GAME_POPULATION_UNIT = 1_000.0
 
-_LOCATION_OPEN = re.compile(r"^([A-Za-z0-9_]+)\s*=\s*\{")
-_SIZE = re.compile(r"size\s*=\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)")
-
-
-def default_start_pops_path(vanilla_root: Path) -> Path:
-    return (
-        vanilla_root
-        / "game"
-        / "main_menu"
-        / "setup"
-        / "start"
-        / "06_pops.txt"
-    )
-
-
-def parse_eu5_start_population(path: Path) -> pl.DataFrame:
-    """Parse vanilla 06_pops.txt into people counts per location_tag."""
-
-    text = path.read_text(encoding="utf-8", errors="replace")
-    totals: dict[str, float] = {}
-    depth = 0
-    in_locations = False
-    current: str | None = None
-
-    for raw in text.splitlines():
-        stripped = raw.split("#", 1)[0].strip()
-        if not stripped:
-            continue
-        opens = stripped.count("{")
-        closes = stripped.count("}")
-
-        if not in_locations:
-            if re.match(r"^locations\s*=", stripped):
-                in_locations = True
-                depth += opens - closes
-            continue
-
-        if depth == 1:
-            match = _LOCATION_OPEN.match(stripped)
-            if match:
-                current = match.group(1)
-                totals.setdefault(current, 0.0)
-
-        if current is not None and depth >= 2:
-            for size_match in _SIZE.finditer(stripped):
-                totals[current] += (
-                    float(size_match.group(1)) * PEOPLE_PER_GAME_POPULATION_UNIT
-                )
-
-        depth += opens - closes
-        if depth <= 0:
-            break
-        if depth < 2:
-            current = None
-
-    if not totals:
-        raise ValueError(f"no location populations parsed from {path}")
-
-    return (
-        pl.DataFrame(
-            {
-                LOCATION_TAG: list(totals.keys()),
-                "eu5_population_total": list(totals.values()),
-            }
-        )
-        .with_columns(pl.col("eu5_population_total").cast(pl.Float64))
-        .sort(LOCATION_TAG)
-    )
+DEFAULT_EU5_VANILLA_RELATIVE = (
+    "../ProsperOrPerishConstructor/artifacts/data/food_building_startup/"
+    "derived_food_balance_by_location.parquet"
+)
 
 
 def _area_km2_expr(frame: pl.DataFrame) -> pl.Expr:
@@ -91,25 +26,78 @@ def _area_km2_expr(frame: pl.DataFrame) -> pl.Expr:
     )
 
 
-def build_eu5_population_layers(
+def _location_key_expr(frame: pl.DataFrame) -> pl.Expr:
+    if LOCATION_TAG in frame.columns:
+        return pl.col(LOCATION_TAG).cast(pl.String)
+    if "slug" in frame.columns:
+        return pl.col("slug").cast(pl.String)
+    raise ValueError(
+        f"EU5 Vanilla source needs {LOCATION_TAG} or slug "
+        f"(columns={frame.columns[:20]})"
+    )
+
+
+def load_constructor_eu5_vanilla_frame(path: Path) -> pl.DataFrame:
+    """Load Constructor game-start location demographics (pop + development)."""
+
+    frame = pl.read_parquet(path) if path.suffix.lower() == ".parquet" else pl.read_csv(path)
+    location = _location_key_expr(frame).alias(LOCATION_TAG)
+
+    if "eu5_start_population" in frame.columns:
+        population = pl.col("eu5_start_population").cast(pl.Float64)
+    elif "total_population" in frame.columns:
+        population = pl.col("total_population").cast(pl.Float64) * PEOPLE_PER_GAME_POPULATION_UNIT
+    else:
+        raise ValueError(
+            f"EU5 Vanilla source missing population column in {path} "
+            "(need total_population or eu5_start_population)"
+        )
+
+    if "development" not in frame.columns:
+        raise ValueError(f"EU5 Vanilla source missing development column in {path}")
+
+    return (
+        frame.select(
+            location,
+            population.alias("eu5_population_total"),
+            pl.col("development").cast(pl.Float64).alias("eu5_development"),
+        )
+        .unique(subset=[LOCATION_TAG], keep="first")
+        .sort(LOCATION_TAG)
+    )
+
+
+def build_eu5_vanilla_layers(
     *,
-    start_pops_path: Path,
+    constructor_locations_path: Path,
     location_area_path: Path,
 ) -> pl.DataFrame:
-    """Return location_tag + total people + people/km² for exploration mapmodes."""
+    """Return location_tag + pop total/density + development from Constructor data."""
 
-    pops = parse_eu5_start_population(start_pops_path)
+    vanilla = load_constructor_eu5_vanilla_frame(constructor_locations_path)
     area = pl.read_parquet(location_area_path)
     if LOCATION_TAG not in area.columns:
         raise ValueError(f"missing {LOCATION_TAG} in {location_area_path}")
     area = area.select(LOCATION_TAG, _area_km2_expr(area).alias("_area_km2"))
     return (
-        pops.join(area, on=LOCATION_TAG, how="left")
+        vanilla.join(area, on=LOCATION_TAG, how="left")
         .with_columns(
             pl.when(pl.col("_area_km2").is_not_null() & (pl.col("_area_km2") > 0))
             .then(pl.col("eu5_population_total") / pl.col("_area_km2"))
             .otherwise(None)
-            .alias("eu5_population_density")
+            .alias("eu5_population_density"),
         )
         .drop("_area_km2")
+    )
+
+
+# Back-compat alias used by older call sites / tests.
+def build_eu5_population_layers(
+    *,
+    constructor_locations_path: Path,
+    location_area_path: Path,
+) -> pl.DataFrame:
+    return build_eu5_vanilla_layers(
+        constructor_locations_path=constructor_locations_path,
+        location_area_path=location_area_path,
     )

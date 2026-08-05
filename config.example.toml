@@ -1,4 +1,4 @@
-﻿[paths]
+[paths]
 # EU5 install root (Windows paths are resolved under WSL automatically).
 vanilla_root = "C:\\Games\\steamapps\\common\\Europa Universalis V"
 
@@ -11,8 +11,8 @@ sample_points = "../ProsperOrPerishConstructor/artifacts/data/population_capacit
 
 # Calibrated location area (km²) for EU5 population density.
 # location_area = "../ProsperOrPerishConstructor/artifacts/data/population_capacity/geometry_land_contract_candidate_v1/location_geometry_candidate.parquet"
-# Vanilla 1337 start pops (game size × 1000 → people). Defaults under vanilla_root.
-# start_pops = "C:\\Games\\steamapps\\common\\Europa Universalis V\\game\\main_menu\\setup\\start\\06_pops.txt"
+# Constructor game-start demographics for the EU5 Vanilla dataset (population + development).
+# eu5_vanilla = "../ProsperOrPerishConstructor/artifacts/data/food_building_startup/derived_food_balance_by_location.parquet"
 
 gaez_cache_dir = "artifacts/gaez_cache"
 artifacts_dir = "artifacts"

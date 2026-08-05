@@ -666,23 +666,32 @@
     "default_layer": "eu5_population_total",
     "attribute_columns": [
       "eu5_population_total",
-      "eu5_population_density"
+      "eu5_population_density",
+      "eu5_development"
     ],
     "layers": [
       {
         "id": "eu5_population_total",
-        "label": "Population total (1337 start)",
-        "group": "Population",
+        "label": "Population",
+        "group": "Vanilla start",
         "unit": "people",
         "zero_is_missing": true,
         "eu5_goods": []
       },
       {
         "id": "eu5_population_density",
-        "label": "Population density (1337 start)",
-        "group": "Population",
+        "label": "Population density",
+        "group": "Vanilla start",
         "unit": "people/km\u00b2",
         "zero_is_missing": true,
+        "eu5_goods": []
+      },
+      {
+        "id": "eu5_development",
+        "label": "Development",
+        "group": "Vanilla start",
+        "unit": "development",
+        "zero_is_missing": false,
         "eu5_goods": []
       }
     ],

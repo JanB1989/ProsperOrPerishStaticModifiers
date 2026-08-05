@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -163,7 +163,7 @@
     <p class="note">
       EU5 locations colored by FAO GAEZ v5 HP8100 (1981–2000) modern crop/soil physics.
       Default metric is production density (kg dry matter per km² of total cell area).
-      Dataset switch: GAEZ potential, exploration layers (MapSPAM / GLW / HYDE / …), or EU5 1337 population.
+      Dataset switch: GAEZ potential, Exploration layers, or EU5 Vanilla (population + development).
       Density mapmodes use people or heads per km²; color scale is the 98th percentile of the active layer.
     </p>
   </header>
@@ -172,7 +172,7 @@
       <select id="dataset">
         <option value="gaez">GAEZ potential</option>
         <option value="exploration">Exploration layers</option>
-        <option value="eu5">EU5 population</option>
+        <option value="eu5">EU5 Vanilla</option>
       </select>
     </label>
     <label id="cropLabel">Crop
@@ -282,7 +282,8 @@
     for (let i = 0; i < values.length; i++) {
       const v = values[i];
       if (!Number.isFinite(v)) continue;
-      if (includeZero ? v >= 0 : v > 0) filtered.push(v);
+      // includeZero keeps 0 and negatives (e.g. EU5 development scores).
+      if (includeZero ? true : v > 0) filtered.push(v);
     }
     if (!filtered.length) return 0;
     filtered.sort((a, b) => a - b);
@@ -310,10 +311,10 @@
     if (metricId === "cycle_length") return Math.round(v) + " d";
     if (metricId === "irrigation_need") return (v >= 10 ? v.toFixed(0) : v.toFixed(1)) + " mm";
     // Densities (people/km², kg DM/km², heads/km²) and totals: keep readable precision.
-    if (v >= 10000) return v.toFixed(0);
-    if (v >= 100) return v.toFixed(1);
-    if (v >= 10) return v.toFixed(1);
-    if (v >= 1) return v.toFixed(2);
+    if (Math.abs(v) >= 10000) return v.toFixed(0);
+    if (Math.abs(v) >= 100) return v.toFixed(1);
+    if (Math.abs(v) >= 10) return v.toFixed(1);
+    if (Math.abs(v) >= 1) return v.toFixed(2);
     return v.toFixed(3);
   }
 
@@ -650,7 +651,7 @@
       if (isLayerDataset(mode)) {
         const bundle = datasetBundle(mode);
         const layer = bundle.layers.find(l => l.id === layerSelect.value);
-        const prefix = mode === "eu5" ? "EU5" : "Exploration";
+        const prefix = mode === "eu5" ? "EU5 Vanilla" : "Exploration";
         statusBase = `${prefix} · ${layer ? layer.label : layerSelect.value}`;
       } else {
         const crop = cropSelect.value;
@@ -707,7 +708,7 @@
         ? ""
         : ` ${unit}`;
       const modeNote = mode === "exploration" ? "exploration"
-        : mode === "eu5" ? "EU5 1337 start"
+        : mode === "eu5" ? "EU5 Vanilla"
         : waterSelect.value;
       tooltip.innerHTML = `<strong>${tag}</strong><br>${label}: ${formatValue(value, metricId)}${unitSuffix}<br>${modeNote}${pinNote}`;
     }
@@ -785,13 +786,16 @@
         slice = attributes.subarray(colIdx * n, (colIdx + 1) * n);
       }
       const includeZero = metric.zero_is_missing === false;
+      const useRangeScale = metricId === "eu5_development";
       const scaled = new Float32Array(slice.length);
       for (let i = 0; i < slice.length; i++) {
         const raw = slice[i];
         scaled[i] = isMissingValue(raw, metric) ? NaN : scaleValue(raw, metricId);
       }
-      const vmax = Math.max(percentile(scaled, 0.98, includeZero), 1e-6);
-      const vmin = includeZero ? 0 : 0;
+      const vmax = useRangeScale
+        ? percentile(scaled, 0.98, true)
+        : Math.max(percentile(scaled, 0.98, includeZero), 1e-6);
+      const vmin = useRangeScale ? percentile(scaled, 0.02, true) : 0;
       document.getElementById("legendTitle").textContent = metric.label;
       document.getElementById("legendUnit").textContent = metric.unit;
       if (metricId === "suitability_index") {
@@ -818,7 +822,10 @@
           pixels[o] = 55; pixels[o + 1] = 65; pixels[o + 2] = 78; pixels[o + 3] = 255;
           continue;
         }
-        const t = Math.min(1, scaleValue(v, metricId) / vmax);
+        const sv = scaleValue(v, metricId);
+        const t = useRangeScale
+          ? Math.min(1, Math.max(0, (sv - vmin) / Math.max(vmax - vmin, 1e-6)))
+          : Math.min(1, sv / vmax);
         const [r, g, b, a] = viridis(t);
         pixels[o] = r; pixels[o + 1] = g; pixels[o + 2] = b; pixels[o + 3] = a;
       }

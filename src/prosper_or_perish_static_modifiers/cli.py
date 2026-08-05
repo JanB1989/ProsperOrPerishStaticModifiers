@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import http.server
@@ -144,8 +144,8 @@ def cmd_build_external(args: argparse.Namespace) -> int:
         cache_dir=cfg.external_cache_dir,
         geometry_path=cfg.geometry_path,
         output_path=cfg.external_wide_path,
-        start_pops_path=cfg.start_pops_path,
         location_area_path=cfg.location_area_path,
+        constructor_locations_path=cfg.eu5_vanilla_path,
     )
     print(json.dumps({"external_wide": str(path)}, indent=2))
     return 0
@@ -204,7 +204,7 @@ def cmd_info(args: argparse.Namespace) -> int:
                 "labeling_baseline": str(cfg.labeling_baseline),
                 "sample_points": str(cfg.sample_points),
                 "gaez_cache_dir": str(cfg.gaez_cache_dir),
-                "start_pops": str(cfg.start_pops_path),
+                "eu5_vanilla": str(cfg.eu5_vanilla_path),
                 "location_area": str(cfg.location_area_path),
                 "labels_long": str(cfg.labels_long) if cfg.labels_long else None,
                 "sha256_locks": sha256_lock_count(),

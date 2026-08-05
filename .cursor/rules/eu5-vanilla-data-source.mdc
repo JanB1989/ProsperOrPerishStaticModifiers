@@ -1,0 +1,27 @@
+---
+description: EU5 Vanilla map layers must use Constructor stored datasets, never re-parse vanilla start files
+alwaysApply: true
+---
+
+# EU5 Vanilla data source
+
+For the **EU5 Vanilla** dataset in this map browser (population, population density, development):
+
+- Use **Constructor stored artifacts**, not vanilla start text files.
+- Default source: `../ProsperOrPerishConstructor/artifacts/data/food_building_startup/derived_food_balance_by_location.parquet`
+  - Population: `total_population` × 1000 (people)
+  - Development: numeric `development` column
+  - Density: people / Constructor calibrated area (`area_jacobian_km2` from geometry candidate parquet)
+- Config key: `paths.eu5_vanilla` (see `config.example.toml`). Area join: `paths.location_area`.
+
+## Do not
+
+- Re-parse `06_pops.txt`, `07_cities_and_buildings.txt`, or other vanilla setup files for these layers
+- Invent rank ordinals and call them “development”
+- Pull HYDE / WorldPop / other exploration rasters into the EU5 Vanilla dataset
+
+## Do
+
+- Prefer existing Constructor parquet/CSV outputs that already carry game-start demographics
+- If the path moves, update config defaults and keep layers wired to columns on that table
+- Keep Exploration / GAEZ datasets separate from EU5 Vanilla

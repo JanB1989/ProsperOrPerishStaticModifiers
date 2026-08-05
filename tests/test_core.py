@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import gzip
 import json
@@ -207,36 +207,34 @@ def test_publish_exploration_pack(tmp_path: Path) -> None:
     assert "eu5_population_total" not in meta["exploration"]["attribute_columns"]
     assert "eu5_population_total" in meta["eu5"]["attribute_columns"]
     assert "eu5_population_density" in meta["eu5"]["attribute_columns"]
+    assert "eu5_development" in meta["eu5"]["attribute_columns"]
 
 
 def test_parse_eu5_start_population_scales_game_units(tmp_path: Path) -> None:
     from prosper_or_perish_static_modifiers.eu5_population import (
         PEOPLE_PER_GAME_POPULATION_UNIT,
-        build_eu5_population_layers,
-        parse_eu5_start_population,
+        build_eu5_vanilla_layers,
+        load_constructor_eu5_vanilla_frame,
     )
 
-    pops_path = tmp_path / "06_pops.txt"
-    pops_path.write_text(
-        """
-locations={
-stockholm = {
-	define_pop = {	type = burghers	size = 1.5	culture = swedish	religion = catholic }
-	define_pop = {	type = peasants	size = 20.316	culture = swedish	religion = catholic }
-}
-empty_lake = {
-}
-}
-""",
-        encoding="utf-8",
-    )
-    pops = parse_eu5_start_population(pops_path)
-    stockholm = pops.filter(pl.col("location_tag") == "stockholm").to_dicts()[0]
+    source_path = tmp_path / "derived_food_balance_by_location.parquet"
+    pl.DataFrame(
+        {
+            "slug": ["stockholm", "empty_lake"],
+            "total_population": [21.816, 0.0],
+            "development": [22.75, -1.0],
+        }
+    ).write_parquet(source_path)
+
+    vanilla = load_constructor_eu5_vanilla_frame(source_path)
+    stockholm = vanilla.filter(pl.col("location_tag") == "stockholm").to_dicts()[0]
     assert stockholm["eu5_population_total"] == pytest.approx(
-        (1.5 + 20.316) * PEOPLE_PER_GAME_POPULATION_UNIT
+        21.816 * PEOPLE_PER_GAME_POPULATION_UNIT
     )
-    empty = pops.filter(pl.col("location_tag") == "empty_lake").to_dicts()[0]
+    assert stockholm["eu5_development"] == pytest.approx(22.75)
+    empty = vanilla.filter(pl.col("location_tag") == "empty_lake").to_dicts()[0]
     assert empty["eu5_population_total"] == 0.0
+    assert empty["eu5_development"] == pytest.approx(-1.0)
 
     area_path = tmp_path / "area.parquet"
     pl.DataFrame(
@@ -245,14 +243,15 @@ empty_lake = {
             "area_jacobian_km2": [2000.0, 100.0],
         }
     ).write_parquet(area_path)
-    wide = build_eu5_population_layers(
-        start_pops_path=pops_path,
+    wide = build_eu5_vanilla_layers(
+        constructor_locations_path=source_path,
         location_area_path=area_path,
     )
     row = wide.filter(pl.col("location_tag") == "stockholm").to_dicts()[0]
     assert row["eu5_population_density"] == pytest.approx(
-        ((1.5 + 20.316) * PEOPLE_PER_GAME_POPULATION_UNIT) / 2000.0
+        (21.816 * PEOPLE_PER_GAME_POPULATION_UNIT) / 2000.0
     )
+    assert row["eu5_development"] == pytest.approx(22.75)
 
 
 def test_pilot_layer_catalog_covers_plan() -> None:
@@ -271,6 +270,7 @@ def test_pilot_layer_catalog_covers_plan() -> None:
     assert "hyde_pop_density_1500" in ids
     assert "eu5_population_total" in ids
     assert "eu5_population_density" in ids
+    assert "eu5_development" in ids
     groups = {layer.group for layer in PILOT_LAYERS}
     assert groups == {
         "MapSPAM observed",
@@ -278,7 +278,7 @@ def test_pilot_layer_catalog_covers_plan() -> None:
         "Historical Europe",
         "Modern population",
         "Historical population",
-        "Population",
+        "Vanilla start",
     }
     from prosper_or_perish_static_modifiers.external_layers import (
         EU5_LAYERS,
@@ -288,5 +288,6 @@ def test_pilot_layer_catalog_covers_plan() -> None:
     assert {layer.layer_id for layer in EU5_LAYERS} == {
         "eu5_population_total",
         "eu5_population_density",
+        "eu5_development",
     }
     assert all(layer.source != "eu5" for layer in EXPLORATION_LAYERS)

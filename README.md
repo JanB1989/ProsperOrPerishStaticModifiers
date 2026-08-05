@@ -1,4 +1,4 @@
-﻿# Prosper or Perish Static Modifiers
+# Prosper or Perish Static Modifiers
 
 Standalone **uv / Python** ETL that samples FAO GAEZ v5 (and exploration) rasters onto Europa Universalis V locations and publishes a GitHub Pages map browser.
 

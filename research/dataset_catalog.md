@@ -1,4 +1,4 @@
-﻿# Dataset catalog for EU5 location mapping
+# Dataset catalog for EU5 location mapping
 
 Living inventory of global (or Old-World) datasets that can reuse the ProsperOrPerishStaticModifiers pattern:
 
@@ -58,8 +58,9 @@ Later these become **ML features** (biophysical potential / climate / soil) and 
 | `hyde_pop_density_1300` | HYDE 3.2.1 popd | people/km² | Historical; nearest century before 1337 |
 | `hyde_pop_density_1400` | HYDE 3.2.1 popd | people/km² | Historical |
 | `hyde_pop_density_1500` | HYDE 3.2.1 popd | people/km² | Historical; pairs with Europe 1500 suitability |
-| `eu5_population_total` | Vanilla `06_pops.txt` | people | 1337 start; game `size` × 1000 |
-| `eu5_population_density` | EU5 start pop / calibrated area | people/km² | Uses Constructor `area_jacobian_km2` |
+| `eu5_population_total` | Constructor `derived_food_balance_by_location` | people | EU5 Vanilla; `total_population` × 1000 |
+| `eu5_population_density` | Constructor pop / calibrated area | people/km² | Uses Constructor `area_jacobian_km2` |
+| `eu5_development` | Constructor `derived_food_balance_by_location` | development | Numeric game-start development score |
 
 ---
 

@@ -1,9 +1,11 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+from prosper_or_perish_static_modifiers.eu5_population import DEFAULT_EU5_VANILLA_RELATIVE
 
 
 def repo_root() -> Path:
@@ -58,7 +60,7 @@ class ProjectConfig:
     crop_samples_dir: Path | None
     external_cache_dir: Path
     location_area_path: Path
-    start_pops_path: Path
+    eu5_vanilla_path: Path
     crops: list[str]
     water_modes: list[str]
     equator_y: int
@@ -125,17 +127,7 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
         "../ProsperOrPerishConstructor/artifacts/data/population_capacity/"
         "geometry_land_contract_candidate_v1/location_geometry_candidate.parquet",
     )
-    pops_raw = paths.get(
-        "start_pops",
-        str(
-            vanilla_root
-            / "game"
-            / "main_menu"
-            / "setup"
-            / "start"
-            / "06_pops.txt"
-        ),
-    )
+    eu5_raw = paths.get("eu5_vanilla", DEFAULT_EU5_VANILLA_RELATIVE)
     return ProjectConfig(
         repo=repo,
         vanilla_root=vanilla_root,
@@ -149,7 +141,7 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
         crop_samples_dir=resolve_path(samples_raw, base=repo) if samples_raw else None,
         external_cache_dir=resolve_path(external_raw, base=repo),
         location_area_path=resolve_path(area_raw, base=repo),
-        start_pops_path=resolve_path(pops_raw, base=repo),
+        eu5_vanilla_path=resolve_path(eu5_raw, base=repo),
         crops=list(pipeline.get("crops") or []),
         water_modes=list(pipeline.get("water_modes") or ["rainfed", "irrigated"]),
         equator_y=int(pipeline.get("equator_y", 1024)),

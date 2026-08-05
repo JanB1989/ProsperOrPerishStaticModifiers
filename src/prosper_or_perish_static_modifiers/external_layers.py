@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -176,8 +176,8 @@ PILOT_LAYERS: tuple[ExternalLayerSpec, ...] = (
     ),
     ExternalLayerSpec(
         layer_id="eu5_population_total",
-        label="Population total (1337 start)",
-        group="Population",
+        label="Population",
+        group="Vanilla start",
         unit="people",
         source="eu5",
         table_column="eu5_population_total",
@@ -186,12 +186,22 @@ PILOT_LAYERS: tuple[ExternalLayerSpec, ...] = (
     ),
     ExternalLayerSpec(
         layer_id="eu5_population_density",
-        label="Population density (1337 start)",
-        group="Population",
+        label="Population density",
+        group="Vanilla start",
         unit="people/km²",
         source="eu5",
         table_column="eu5_population_density",
         zero_is_missing=True,
+        eu5_goods=(),
+    ),
+    ExternalLayerSpec(
+        layer_id="eu5_development",
+        label="Development",
+        group="Vanilla start",
+        unit="development",
+        source="eu5",
+        table_column="eu5_development",
+        zero_is_missing=False,
         eu5_goods=(),
     ),
 )

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from pathlib import Path
 
@@ -7,7 +7,7 @@ import polars as pl
 import rasterio
 
 from prosper_or_perish_static_modifiers.crops import HECTARES_PER_KM2
-from prosper_or_perish_static_modifiers.eu5_population import build_eu5_population_layers
+from prosper_or_perish_static_modifiers.eu5_population import build_eu5_vanilla_layers
 from prosper_or_perish_static_modifiers.external_layers import (
     PILOT_LAYERS,
     resolve_layer_raster,
@@ -87,8 +87,8 @@ def build_external_wide(
     cache_dir: Path,
     geometry_path: Path,
     output_path: Path,
-    start_pops_path: Path | None = None,
     location_area_path: Path | None = None,
+    constructor_locations_path: Path | None = None,
 ) -> Path:
     """Sample pilot external rasters and emit one wide row per location."""
 
@@ -141,18 +141,18 @@ def build_external_wide(
 
     eu5_layers = [layer for layer in PILOT_LAYERS if layer.source == "eu5"]
     if eu5_layers:
-        if start_pops_path is None or location_area_path is None:
+        if constructor_locations_path is None or location_area_path is None:
             raise ValueError(
-                "EU5 population layers require start_pops_path and location_area_path"
+                "EU5 Vanilla layers require constructor_locations_path and location_area_path"
             )
-        eu5 = build_eu5_population_layers(
-            start_pops_path=start_pops_path,
+        eu5 = build_eu5_vanilla_layers(
+            constructor_locations_path=constructor_locations_path,
             location_area_path=location_area_path,
         )
         for layer in eu5_layers:
             column = layer.table_column or layer.layer_id
             if column not in eu5.columns:
-                raise ValueError(f"EU5 population frame missing column {column}")
+                raise ValueError(f"EU5 Vanilla frame missing column {column}")
             out = out.join(
                 eu5.select(LOCATION_TAG, pl.col(column).alias(layer.layer_id)),
                 on=LOCATION_TAG,
