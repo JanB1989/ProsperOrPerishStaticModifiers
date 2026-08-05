@@ -38,6 +38,8 @@ Later these become **ML features** (biophysical potential / climate / soil) and 
 | **EarthStat / Monfreda (~2000)** | Observed modern | 5′ | **175** crops harvested area + yield | olives, grapes→wine proxy, spices, fiber, specialty plants | Academic / EarthStat terms | [earthstat.org](http://www.earthstat.org/) | Yes | A3 |
 | **Zabel et al. crop suitability v3** | Potential (independent of GAEZ) | 30″ | ~23 food/feed/fiber + overall; rainfed/irrigated | staples + fiber | Zenodo | [zenodo.5982577](https://zenodo.org/records/5982577) | Yes | A4 |
 | **Europe ag suitability 1500–2000** | Historical / era proxy | 0.5° | Not crop-specific; annual index 0–1, bands 1500–2000 | general ag potential (Europe) | Harvard Dataverse | doi:[10.7910/DVN/ECWMZS](https://doi.org/10.7910/DVN/ECWMZS) (`suit.tif`) | Yes (Europe-only) | **A5** |
+| **WorldPop 2020 (1 km mosaic)** | Modern population density | ~1 km | people/pixel → people/km² at sample lat | settlement / demand prior | CC BY 4.0 | `data.worldpop.org` Global_2000_2020 mosaic | Yes | **A6** |
+| **HYDE 3.2.1 popd** | Historical population density | 5′ | people/km² for 1300 / 1400 / 1500 CE | era population prior (not 1337 truth) | CC BY 3.0 | DANS doi:[10.17026/dans-25g-gez3](https://doi.org/10.17026/dans-25g-gez3) (Range-extract `popd_*AD.asc`) | Yes | **A6** |
 
 ### Pilot layers implemented in this repo (`posm fetch-external` / `build-external`)
 
@@ -52,6 +54,10 @@ Later these become **ML features** (biophysical potential / climate / soil) and 
 | `glw_cattle_density` | GLW4 D-AW CTX | heads/km² | Livestock |
 | `glw_sheep_density` | GLW4 D-AW SHX | heads/km² | Wool proxy |
 | `europe_ag_suitability_1500` | ECWMZS suit.tif band 1500 | index 0–1 | Closest year to EU5 start in dataset |
+| `worldpop_pop_density_2020` | WorldPop 2020 1 km | people/km² | Modern; separate UI group |
+| `hyde_pop_density_1300` | HYDE 3.2.1 popd | people/km² | Historical; nearest century before 1337 |
+| `hyde_pop_density_1400` | HYDE 3.2.1 popd | people/km² | Historical |
+| `hyde_pop_density_1500` | HYDE 3.2.1 popd | people/km² | Historical; pairs with Europe 1500 suitability |
 
 ---
 
@@ -77,7 +83,7 @@ Later these become **ML features** (biophysical potential / climate / soil) and 
 | SoilGrids / HWSD | Soil features | texture, pH, SOC, depth | GAEZ uses HWSD internally |
 | CHELSA / WorldClim | Climate | modern climatologies | — |
 | **CHELSA-TraCE21k (~1300)** | Paleoclimate near start | Era-relevant climate features | Constructor inventory `chelsa_trace21k_1300` |
-| **HYDE 3.2** | Historical cropland/pasture fractions | Diagnostic land use | Constructor `hyde_diagnostic_only` |
+| **HYDE 3.2** | Historical cropland/pasture / population | Diagnostic land use; popd pilots in this repo | Constructor `hyde_diagnostic_only`; StaticModifiers exploration layers |
 | **ArchaeoGLOBE / crop history registry** | Presence evidence | Pre-1337 crop availability | `population_capacity_crop_history_registry.toml` |
 
 ---
@@ -118,7 +124,9 @@ Density mapset: `D-AW` (animals per km²). Absolute counts: `AWX`.
 1. **MapSPAM / EarthStat / GLW are modern** — use as calibration priors, not 1337 labels alone.  
 2. **GAEZ HP8100 is 1981–2000 climate** — modern diagnostic potential, not medieval.  
 3. **Europe 1500 suitability** starts at 1500 (not 1337) and is not crop-specific.  
-4. Keep **potential vs observed vs historical** as separate viewer/dataset modes so the UI stays honest.
+4. **WorldPop 2020** is modern observed settlement density — calibration prior only, never a 1337 label.  
+5. **HYDE popd** is century-step reconstruction (1300/1400/1500); useful as an era prior, not census truth.  
+6. Keep **potential vs observed vs historical vs population** as separate viewer groups so the UI stays honest.
 
 ## Recommended next steps after pilots
 

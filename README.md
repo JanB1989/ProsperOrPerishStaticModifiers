@@ -7,7 +7,7 @@ Standalone **uv / Python** ETL that samples FAO GAEZ v5 (and exploration) raster
 1. Downloads locked GAEZ v5 RES05 **YXX** (yield), **YLX** (production density), and **SX3** (suitable area) rasters.
 2. Samples them at game-authoritative EU5 footprint points.
 3. Emits one wide parquet: one row per location, with rain-fed and irrigated density / yield / suitable columns for 23 crops.
-4. Optionally downloads and samples **exploration pilots**: MapSPAM (wheat/maize/cotton), GLW4 (cattle/sheep), Europe ag suitability 1500.
+4. Optionally downloads and samples **exploration pilots**: MapSPAM (wheat/maize/cotton), GLW4 (cattle/sheep), Europe ag suitability 1500, WorldPop 2020 density, HYDE pop density 1300/1400/1500.
 5. Publishes a compact client-side map under `docs/` (GAEZ crop modes + exploration Dataset switch).
 
 See [research/dataset_catalog.md](research/dataset_catalog.md) for the full external-dataset inventory and ML feature/label roles.
@@ -35,7 +35,7 @@ uv run posm fetch-gaez
 uv run posm build-geometry
 uv run posm build-samples
 uv run posm build-wide
-uv run posm fetch-external   # MapSPAM + GLW4 + Europe 1500 pilots
+uv run posm fetch-external   # MapSPAM + GLW4 + Europe 1500 + population pilots
 uv run posm build-external
 uv run posm publish
 uv run posm serve
@@ -52,14 +52,14 @@ uv run posm build-external
 uv run posm publish
 ```
 
-Open `http://127.0.0.1:8000/`. Use **Dataset → Exploration layers** for MapSPAM / GLW / Europe 1500.
+Open `http://127.0.0.1:8000/`. Use **Dataset → Exploration layers** for MapSPAM / GLW / Europe 1500 / population groups.
 
 ### Outputs
 
 | Path | Role |
 |------|------|
 | `artifacts/gaez_cache/` | Downloaded GeoTIFFs + source manifest |
-| `artifacts/external_cache/` | MapSPAM / GLW / Europe suitability pilots |
+| `artifacts/external_cache/` | MapSPAM / GLW / Europe suitability / WorldPop / HYDE pilots |
 | `artifacts/location_geometry.parquet` | EU5 location geometry |
 | `artifacts/location_id_map.bin.gz` | Pixel → location row index |
 | `artifacts/crop_mode_samples/` | Per crop/mode sample + location aggregates |
@@ -89,4 +89,6 @@ uv run pytest
 - MapSPAM: IFPRI Harvard Dataverse — pilot uses **2010** (doi:10.7910/DVN/PRFF8V); 2020 requires guestbook.
 - GLW4: FAO GCS (`fao-gismgr-glw-data`), CC BY 4.0.
 - Europe suitability 1500–2000: Harvard Dataverse (doi:10.7910/DVN/ECWMZS).
+- WorldPop 2020 1 km mosaic: WorldPop / University of Southampton (CC BY 4.0).
+- HYDE 3.2.1 population density: DANS (doi:10.17026/dans-25g-gez3), CC BY 3.0; only `popd` ASC years are Range-extracted.
 - This repo does not redistribute vanilla map assets.

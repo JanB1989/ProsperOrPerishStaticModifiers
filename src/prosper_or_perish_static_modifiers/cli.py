@@ -223,7 +223,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     fetch_ext = sub.add_parser(
         "fetch-external",
-        help="Download MapSPAM / GLW4 / Europe-1500 pilot rasters",
+        help="Download MapSPAM / GLW4 / Europe-1500 / population pilot rasters",
     )
     _add_config_arg(fetch_ext)
     fetch_ext.set_defaults(func=cmd_fetch_external)

@@ -529,7 +529,11 @@
       "spam_cotton_rainfed_harvested_area",
       "glw_cattle_density",
       "glw_sheep_density",
-      "europe_ag_suitability_1500"
+      "europe_ag_suitability_1500",
+      "worldpop_pop_density_2020",
+      "hyde_pop_density_1300",
+      "hyde_pop_density_1400",
+      "hyde_pop_density_1500"
     ],
     "layers": [
       {
@@ -618,6 +622,38 @@
         "label": "Europe ag suitability (1500)",
         "group": "Historical Europe",
         "unit": "index 0\u20131",
+        "zero_is_missing": true,
+        "eu5_goods": []
+      },
+      {
+        "id": "worldpop_pop_density_2020",
+        "label": "Population density (WorldPop 2020)",
+        "group": "Modern population",
+        "unit": "people/km\u00b2",
+        "zero_is_missing": true,
+        "eu5_goods": []
+      },
+      {
+        "id": "hyde_pop_density_1300",
+        "label": "Population density (HYDE 1300)",
+        "group": "Historical population",
+        "unit": "people/km\u00b2",
+        "zero_is_missing": true,
+        "eu5_goods": []
+      },
+      {
+        "id": "hyde_pop_density_1400",
+        "label": "Population density (HYDE 1400)",
+        "group": "Historical population",
+        "unit": "people/km\u00b2",
+        "zero_is_missing": true,
+        "eu5_goods": []
+      },
+      {
+        "id": "hyde_pop_density_1500",
+        "label": "Population density (HYDE 1500)",
+        "group": "Historical population",
+        "unit": "people/km\u00b2",
         "zero_is_missing": true,
         "eu5_goods": []
       }

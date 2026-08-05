@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
+import numpy as np
 import polars as pl
+import rasterio
 
 from prosper_or_perish_static_modifiers.external_layers import (
     PILOT_LAYERS,
@@ -11,9 +13,13 @@ from prosper_or_perish_static_modifiers.external_layers import (
 from prosper_or_perish_static_modifiers.geometry import LOCATION_TAG
 from prosper_or_perish_static_modifiers.sample import (
     _land_mask_expr,
+    _lon_lat_columns,
     _sample_weight_expr,
     sample_raster_at_footprint_points,
 )
+
+# Mean Earth radius conversion: degrees of latitude ≈ 111.32 km.
+_KM_PER_DEG = 111.32
 
 
 def _aggregate_layer_to_locations(
@@ -36,6 +42,40 @@ def _aggregate_layer_to_locations(
             ).alias(value_column),
         )
         .with_columns(pl.col(value_column).fill_nan(None))
+    )
+
+
+def _people_per_pixel_to_density(
+    sampled: pl.DataFrame,
+    sample_points: pl.DataFrame,
+    *,
+    value_column: str,
+    raster_path: Path,
+) -> pl.DataFrame:
+    """Convert WorldPop people/pixel counts to people/km² using cell area at sample latitude."""
+    with rasterio.open(raster_path) as dataset:
+        cellsize_deg = abs(float(dataset.transform.a))
+    lon_expr, lat_expr = _lon_lat_columns(sample_points)
+    with_lat = sampled.join(
+        sample_points.select(
+            LOCATION_TAG,
+            "sample_index",
+            lat_expr.alias("_sample_lat"),
+        ),
+        on=[LOCATION_TAG, "sample_index"],
+        how="left",
+    )
+    lat = with_lat["_sample_lat"].to_numpy()
+    values = with_lat[value_column].to_numpy()
+    # Spherical rectangle: height constant, width shrinks with cos(latitude).
+    height_km = cellsize_deg * _KM_PER_DEG
+    width_km = cellsize_deg * _KM_PER_DEG * np.cos(np.deg2rad(lat))
+    area_km2 = height_km * width_km
+    density = np.full(values.shape, np.nan, dtype=np.float64)
+    ok = np.isfinite(values) & np.isfinite(area_km2) & (area_km2 > 0)
+    density[ok] = values[ok] / area_km2[ok]
+    return sampled.with_columns(
+        pl.Series(value_column, density, dtype=pl.Float64).fill_nan(None)
     )
 
 
@@ -73,7 +113,15 @@ def build_external_wide(
             raster_path,
             value_column=layer.layer_id,
             band_index=band,
-        ).join(base_pts, on=[LOCATION_TAG, "sample_index"], how="left")
+        )
+        if layer.count_to_density:
+            sampled = _people_per_pixel_to_density(
+                sampled,
+                sample_points,
+                value_column=layer.layer_id,
+                raster_path=raster_path,
+            )
+        sampled = sampled.join(base_pts, on=[LOCATION_TAG, "sample_index"], how="left")
         loc = _aggregate_layer_to_locations(sampled, value_column=layer.layer_id)
         out = out.join(loc, on=LOCATION_TAG, how="left")
 

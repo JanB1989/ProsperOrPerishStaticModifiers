@@ -12,7 +12,7 @@ class ExternalLayerSpec:
     label: str
     group: str
     unit: str
-    source: str  # spam | glw | europe_suit
+    source: str  # spam | glw | europe_suit | worldpop | hyde
     zero_is_missing: bool = True
     # Source-specific fields
     spam_variable: str | None = None  # Y | H
@@ -20,6 +20,9 @@ class ExternalLayerSpec:
     spam_system: str | None = None  # R | I | A
     glw_species_code: str | None = None  # CTX | SHX
     raster_band: int | None = None  # 1-based GDAL band; Europe suit year 1500 = band 1
+    hyde_year: int | None = None  # CE year for HYDE popd (e.g. 1300)
+    # WorldPop mosaic is people/pixel; convert to people/km² using cell area at sample lat.
+    count_to_density: bool = False
     eu5_goods: tuple[str, ...] = ()
 
 
@@ -119,6 +122,46 @@ PILOT_LAYERS: tuple[ExternalLayerSpec, ...] = (
         zero_is_missing=True,
         eu5_goods=(),
     ),
+    ExternalLayerSpec(
+        layer_id="worldpop_pop_density_2020",
+        label="Population density (WorldPop 2020)",
+        group="Modern population",
+        unit="people/km²",
+        source="worldpop",
+        count_to_density=True,
+        zero_is_missing=True,
+        eu5_goods=(),
+    ),
+    ExternalLayerSpec(
+        layer_id="hyde_pop_density_1300",
+        label="Population density (HYDE 1300)",
+        group="Historical population",
+        unit="people/km²",
+        source="hyde",
+        hyde_year=1300,
+        zero_is_missing=True,
+        eu5_goods=(),
+    ),
+    ExternalLayerSpec(
+        layer_id="hyde_pop_density_1400",
+        label="Population density (HYDE 1400)",
+        group="Historical population",
+        unit="people/km²",
+        source="hyde",
+        hyde_year=1400,
+        zero_is_missing=True,
+        eu5_goods=(),
+    ),
+    ExternalLayerSpec(
+        layer_id="hyde_pop_density_1500",
+        label="Population density (HYDE 1500)",
+        group="Historical population",
+        unit="people/km²",
+        source="hyde",
+        hyde_year=1500,
+        zero_is_missing=True,
+        eu5_goods=(),
+    ),
 )
 
 
@@ -143,6 +186,14 @@ def spam_zip_name(variable: str) -> str:
 
 def glw_density_relpath(species_code: str) -> str:
     return f"DATA/GLW/MAPSET/D-AW/GLW.D-AW.{species_code}.tif"
+
+
+def hyde_popd_member(year: int) -> str:
+    return f"baseline/asc/{year}AD_pop/popd_{year}AD.asc"
+
+
+def hyde_popd_tif_name(year: int) -> str:
+    return f"hyde_popd_{year}AD.tif"
 
 
 def resolve_layer_raster(cache_dir: Path, layer: ExternalLayerSpec) -> Path:
@@ -182,6 +233,19 @@ def resolve_layer_raster(cache_dir: Path, layer: ExternalLayerSpec) -> Path:
         path = cache_dir / "europe_suit" / "suit.tif"
         if not path.is_file():
             raise FileNotFoundError(f"missing Europe suitability raster {path}")
+        return path
+
+    if layer.source == "worldpop":
+        path = cache_dir / "worldpop" / "ppp_2020_1km_Aggregated.tif"
+        if not path.is_file():
+            raise FileNotFoundError(f"missing WorldPop raster {path}")
+        return path
+
+    if layer.source == "hyde":
+        assert layer.hyde_year is not None
+        path = cache_dir / "hyde" / hyde_popd_tif_name(layer.hyde_year)
+        if not path.is_file():
+            raise FileNotFoundError(f"missing HYDE raster {path}")
         return path
 
     raise ValueError(f"unknown layer source: {layer.source}")

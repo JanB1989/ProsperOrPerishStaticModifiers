@@ -172,6 +172,15 @@ def test_pilot_layer_catalog_covers_plan() -> None:
     assert "glw_cattle_density" in ids
     assert "glw_sheep_density" in ids
     assert "europe_ag_suitability_1500" in ids
+    assert "worldpop_pop_density_2020" in ids
+    assert "hyde_pop_density_1300" in ids
+    assert "hyde_pop_density_1400" in ids
+    assert "hyde_pop_density_1500" in ids
     groups = {layer.group for layer in PILOT_LAYERS}
-    assert groups == {"MapSPAM observed", "Livestock GLW", "Historical Europe"}
-
+    assert groups == {
+        "MapSPAM observed",
+        "Livestock GLW",
+        "Historical Europe",
+        "Modern population",
+        "Historical population",
+    }
