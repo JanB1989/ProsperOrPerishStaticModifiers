@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import gzip
 import json
@@ -201,6 +201,11 @@ def test_publish_exploration_pack(tmp_path: Path) -> None:
     assert len(meta["eu5"]["layers"]) == len(EU5_LAYERS)
     assert (docs_dir / "data" / "exploration_attributes.bin.gz").is_file()
     assert (docs_dir / "data" / "eu5_attributes.bin.gz").is_file()
+    assert any((docs_dir / "data").glob("exploration_attributes.*.bin.gz"))
+    assert any((docs_dir / "data").glob("eu5_attributes.*.bin.gz"))
+    assert meta["eu5"]["assets"]["attributes"].startswith("data/eu5_attributes.")
+    assert meta["eu5"]["assets"]["attributes"].endswith(".bin.gz")
+    assert "eu5_development" in meta["eu5"]["attribute_columns"]
     assert "spam_cotton_rainfed_yield" in meta["exploration"]["attribute_columns"]
     assert "glw_cattle_density" in meta["exploration"]["attribute_columns"]
     assert "europe_ag_suitability_1500" in meta["exploration"]["attribute_columns"]

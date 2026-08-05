@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import math
 import time
@@ -103,7 +104,7 @@ def publish_docs(
             .join(external, on=LOCATION_TAG, how="left")
         )
 
-        def _pack_layers(layers: tuple, asset_name: str) -> dict[str, object]:
+        def _pack_layers(layers: tuple, asset_stem: str) -> dict[str, object]:
             columns = [layer.layer_id for layer in layers]
             missing = [col for col in columns if col not in ordered_ext.columns]
             if missing:
@@ -113,9 +114,14 @@ def publish_docs(
                 for column in columns
             ]
             attributes = np.concatenate(packs).astype(np.float32, copy=False)
+            digest = hashlib.sha256(attributes.tobytes()).hexdigest()[:12]
+            asset_name = f"{asset_stem}.{digest}.bin.gz"
             path = data_dir / asset_name
             with gzip.open(path, "wb") as handle:
                 handle.write(attributes.tobytes())
+            # Keep a stable unversioned alias for local debugging; Pages uses the hashed URL.
+            alias = data_dir / f"{asset_stem}.bin.gz"
+            alias.write_bytes(path.read_bytes())
             return {
                 "default_layer": columns[0],
                 "attribute_columns": columns,
@@ -134,11 +140,9 @@ def publish_docs(
             }
 
         if EXPLORATION_LAYERS:
-            exploration = _pack_layers(
-                EXPLORATION_LAYERS, "exploration_attributes.bin.gz"
-            )
+            exploration = _pack_layers(EXPLORATION_LAYERS, "exploration_attributes")
         if EU5_LAYERS:
-            eu5 = _pack_layers(EU5_LAYERS, "eu5_attributes.bin.gz")
+            eu5 = _pack_layers(EU5_LAYERS, "eu5_attributes")
 
     meta = {
         "title": "GAEZ Crop Mapmodes",

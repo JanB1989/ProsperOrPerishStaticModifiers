@@ -659,7 +659,7 @@
       }
     ],
     "assets": {
-      "attributes": "data/exploration_attributes.bin.gz"
+      "attributes": "data/exploration_attributes.9c2db8c616c9.bin.gz"
     }
   },
   "eu5": {
@@ -696,7 +696,7 @@
       }
     ],
     "assets": {
-      "attributes": "data/eu5_attributes.bin.gz"
+      "attributes": "data/eu5_attributes.b553e807cbe4.bin.gz"
     }
   }
 }
