@@ -1,81 +1,56 @@
-﻿# P&P wheat — 1337 technology mapmodes
+﻿# P&P wheat — 1337 historic-supervised mapmodes
 
-## What EU5 means by wheat
+## Objective
 
-Vanilla EU5 (`game/in_game/common/goods/03_food.txt`):
+1. Merge historic yield data that matches EU5’s wheat definition.
+2. Convert / scale onto a medieval kg/ha footing (Pretty–BAHS calibration).
+3. Train a model of **yield from location attributes**.
+4. Deploy that function to the rest of the world.
 
-- `wheat` is a `farming` `raw_material`
-- `food = 8.0`, staple demand across peasants/laborers/soldiers
-- `origin_in_old_world = yes`
+No EU5 region multipliers. No constant “recipe plateaus.”
 
-Constructor maps the good 1:1 to GAEZ crop code **WHE** / Module II **WHEA**.
+## Historic training set
 
-For 1337 taxa: *Triticum aestivum, durum, spelta, dicoccum, monococcum*.
+Source: BAHS *Three centuries of English crop yields* (`bahs_medieval_yield_observations.parquet`).
 
-## Scientific approach (attribute-driven)
-
-**Goal:** learn where wheat could/did grow well from location attributes — not overwrite regions.
-
-Catalog: [`research/pnp_wheat_evidence.json`](pnp_wheat_evidence.json) (v2).
-
-```
-historical recipes + crop-history presence
-        │
-        ▼
- attribute match rules ──► location-level labels (yield + suitability + weights)
-        │
-        ▼
- curated features X (climate, soil, water access, GAEZ, HYDE, …) ──► HGB dual heads
-        │
-        ▼
- global map + feature importances (what pattern the model found)
-```
-
-Critical rules:
-
-- **Never** use `region` / `super_region` as features or as uniform target multipliers.
-- Historical geography enters only by labeling locations that match **agronomic attribute strata** (e.g. Nile: lat/lon band + `has_river` + arid/mediterranean).
-- Hold out Anatolia + Maghreb recipes to test whether the feature model recovers them.
-
-### Label sources
-
-| Kind | Source |
+| Step | Detail |
 |------|--------|
-| Intensity recipes | BAHS 515, Mediterranean ~420, Song N. China ~650, Indo-Gangetic ~1100, Nile ~1090, Crescent ~900 |
-| Presence | `crop_mode_labels.parquet` wheat `known_available` (~1,348 locations) |
-| Near-zero | arctic; tropical+jungle; desert without river/hydraulic access |
-| Soft physical prior | PyAEZ 1337 wheat (low sample weight) where history is silent |
+| Filter | `model_crop == wheat`, not mixtures/aggregates, years 1211–1450 |
+| Unit | Yield-per-seed → kg/ha via Pretty (1990) seed rate: **515 ÷ 4.0 = 128.75 kg seed/ha** |
+| Geography | Each observation joins to arable vegetation locations in its mapped `eu5_province` (~18 English provinces, ~69 locations) |
+| Negatives | Arctic, tropical jungle, desert-without-river → y = 0 |
+| Soft prior | PyAEZ wheat (irrigated allowed where `has_river`) **scaled** so median on BAHS locations matches historic median — continuous global coverage at medieval intensity |
 
-### Features (curated)
+Hard BAHS rows are high weight; soft physical rows are low weight. No lat/lon, no Europe-only layers, no climate one-hots (those memorized England).
 
-From `location_candidates` + `location_gaez_wide` + `location_external_wide` + PyAEZ as features:
+Audit artifacts: `artifacts/pnp_models/pnp_wheat_historic_labels.parquet`.
 
-- CHELSA temperature / precipitation / seasonality
-- Water access: `has_river`, lake adjacency, irrigable fractions, hydraulic access
-- GAEZ wheat rainfed + irrigated potentials / suitability; barley/rye/oats analogues
-- External: MapSPAM wheat, Europe ag suitability 1500, HYDE pop 1300, livestock densities
-- EU5 topo / vegetation / climate one-hots; soil ordinal; winter flags
-- Engineered: aridity proxy, temp distance from 12 °C, abs lat
+## Features
 
-### Outputs
+Curated attributes from `location_candidates` + GAEZ wide + external + PyAEZ-as-feature (climate/soil/water/GAEZ analogues). **Never** `region` / `super_region`.
 
-| Layer id | Label | Unit |
-|----------|-------|------|
-| `pnp_wheat_production_density` | Production density | kg DM / km² |
-| `pnp_wheat_yield` | Yield | kg DM / suitable km² |
-| `pnp_wheat_suitable_fraction` | Suitable fraction | fraction |
-| `pnp_wheat_suitability_class` | Suitability class | 1 best → 9 worst |
+## Model
 
-### Validation
+Two `HistGradientBoostingRegressor`s trained **only** on historic (+ hostile-zero) rows; then predict all locations.
 
-- **A\*** physical gates (arctic, desert-without-water, tropics, NW Europe, global median sane, CV R²)
-- **S\*** attribute-strata gates (Nile+river high; desert no river low; tropical jungle low; NW farmland mid-high)
-- **H\*** holdout recipe recovery (Anatolia, Maghreb) — reported; do not block deploy alone
+- `production_density = yield × suitable_fraction`
+- Hostile climates soft-zeroed at predict time
 
-### How to add evidence
+## Validation
 
-Append a recipe with `match` (`all` / `any` + `eq`/`in`/`gt`/… on attribute columns), `target_kg_ha`, `weight`, optional `holdout: true`. Then `posm build-pnp` + publish.
+- A*: arctic / desert-no-river / tropics / NW Europe / BAHS median band / CV R²
+- H*: fit on labeled historic locations
+- D*: enough distinct 10 kg/ha bins (continuous distribution check)
 
-## Latest run
+## Outputs
 
-See `artifacts/pnp_models/pnp_wheat_model_card.json` (mirrored under `research/`).
+| Layer | Unit |
+|-------|------|
+| `pnp_wheat_production_density` | kg DM / km² |
+| `pnp_wheat_yield` | kg DM / suitable km² |
+| `pnp_wheat_suitable_fraction` | fraction |
+| `pnp_wheat_suitability_class` | 1 best → 9 worst |
+
+## Limits
+
+Historic labels are **England-centric**. The global map is an attribute extrapolation from medieval English wheat yields plus hostile zeros. Enriching with more non-English absolute yield series (when mappable to `location_tag`) is the way to improve coverage — append observations, retrain.
