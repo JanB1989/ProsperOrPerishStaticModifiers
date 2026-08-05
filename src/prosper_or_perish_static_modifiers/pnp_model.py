@@ -27,6 +27,9 @@ from prosper_or_perish_static_modifiers.pnp_evidence import (
     load_evidence_catalog,
     match_mask,
 )
+from prosper_or_perish_static_modifiers.pnp_assumption_tests import (
+    run_historical_assumption_tests,
+)
 
 CANDIDATE_NUMERIC: tuple[str, ...] = (
     "chelsa_annual_mean_temperature",
@@ -894,111 +897,9 @@ def _pos_median(df: pl.DataFrame) -> float | None:
 
 
 def _assumption_tests(joined: pl.DataFrame) -> dict[str, dict[str, object]]:
-    """~1300 breadbasket beliefs as post-hoc tests (never used as labels)."""
+    """Evaluate the dedicated ~25–30 historical assumption catalog."""
 
-    tests: dict[str, dict[str, object]] = {}
-    global_pos = joined.filter(pl.col("pred_yield_kg_ha") > 1.0)
-    global_med = (
-        float(global_pos["pred_yield_kg_ha"].median()) if global_pos.height else 0.0
-    )
-
-    nile = joined.filter(
-        (pl.col("calibrated_lat") >= 21.0)
-        & (pl.col("calibrated_lat") <= 32.5)
-        & (pl.col("calibrated_lon") >= 29.0)
-        & (pl.col("calibrated_lon") <= 35.0)
-        & (pl.col("has_river_f") > 0.5)
-        & (pl.col("pred_yield_kg_ha") > 1.0)
-    )
-    britain_farm = joined.filter(
-        (pl.col("region") == "great_britain_region")
-        & (pl.col("vegetation") == "farmland")
-        & (pl.col("pred_yield_kg_ha") > 1.0)
-    ) if "region" in joined.columns else joined.filter(
-        (pl.col("calibrated_lat") >= 50.0)
-        & (pl.col("calibrated_lat") <= 59.0)
-        & (pl.col("calibrated_lon") >= -6.0)
-        & (pl.col("calibrated_lon") <= 2.0)
-        & (pl.col("vegetation") == "farmland")
-        & (pl.col("pred_yield_kg_ha") > 1.0)
-    )
-    nile_med = _pos_median(nile)
-    brit_med = _pos_median(britain_farm)
-    tests["T_nile_above_britain"] = {
-        "passed": bool(
-            nile_med is not None and brit_med is not None and nile_med > brit_med
-        ),
-        "nile_pos_median_kg_ha": nile_med,
-        "britain_farmland_pos_median_kg_ha": brit_med,
-        "n_nile": nile.height,
-        "n_britain": britain_farm.height,
-    }
-
-    def _region_pos(region: str) -> pl.DataFrame:
-        if "region" not in joined.columns:
-            return joined.head(0)
-        return joined.filter(
-            (pl.col("region") == region) & (pl.col("pred_yield_kg_ha") > 1.0)
-        )
-
-    france = _region_pos("france_region")
-    steppes = _region_pos("steppes_region")
-    sicily = joined.filter(
-        (pl.col("calibrated_lat") >= 36.5)
-        & (pl.col("calibrated_lat") <= 38.5)
-        & (pl.col("calibrated_lon") >= 12.0)
-        & (pl.col("calibrated_lon") <= 15.5)
-        & (pl.col("pred_yield_kg_ha") > 1.0)
-    )
-    for name, sub in (
-        ("T_france_upper_half", france),
-        ("T_steppes_upper_half", steppes),
-        ("T_sicily_upper_half", sicily),
-    ):
-        med = _pos_median(sub)
-        tests[name] = {
-            "passed": bool(med is not None and med >= global_med),
-            "pos_median_kg_ha": med,
-            "global_pos_median_kg_ha": global_med,
-            "n": sub.height,
-        }
-
-    # Old-World positives for quartile cuts (Afro-Eurasia approx: lon > -25).
-    old_world = global_pos.filter(pl.col("calibrated_lon") > -25.0)
-    ow_q25 = (
-        float(old_world["pred_yield_kg_ha"].quantile(0.25)) if old_world.height else 0.0
-    )
-
-    maghreb = _region_pos("maghreb_region")
-    punjab = joined.filter(
-        (pl.col("calibrated_lat") >= 27.0)
-        & (pl.col("calibrated_lat") <= 34.0)
-        & (pl.col("calibrated_lon") >= 70.0)
-        & (pl.col("calibrated_lon") <= 78.0)
-        & (pl.col("pred_yield_kg_ha") > 1.0)
-    )
-    for name, sub in (("T_maghreb_not_bottom_quartile", maghreb), ("T_punjab_not_bottom_quartile", punjab)):
-        med = _pos_median(sub)
-        tests[name] = {
-            "passed": bool(med is not None and med >= ow_q25),
-            "pos_median_kg_ha": med,
-            "old_world_pos_q25_kg_ha": ow_q25,
-            "n": sub.height,
-        }
-
-    indonesia = joined.filter(
-        (pl.col("calibrated_lat") >= -10.0)
-        & (pl.col("calibrated_lat") <= 10.0)
-        & (pl.col("calibrated_lon") >= 95.0)
-        & (pl.col("calibrated_lon") <= 140.0)
-    )
-    indo_mean = float(indonesia["pred_yield_kg_ha"].mean() or 0.0)
-    tests["T_indonesia_near_zero"] = {
-        "passed": indo_mean < 80.0,
-        "mean_kg_ha": indo_mean,
-        "n": indonesia.height,
-    }
-    return tests
+    return run_historical_assumption_tests(joined)
 
 
 def train_and_predict_pnp_wheat(

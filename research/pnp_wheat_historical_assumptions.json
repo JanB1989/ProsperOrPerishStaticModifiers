@@ -1,0 +1,377 @@
+﻿{
+  "version": 1,
+  "good": "wheat",
+  "era": "c.1300",
+  "description": "Historical breadbasket and anti-breadbasket assumptions for EU5-definition wheat (~Triticum staple). Used only as post-hoc validation — never as training labels or region multipliers.",
+  "notes": [
+    "Selectors use agronomic/geographic filters (bbox, climate, vegetation, river), not EU5 region IDs as causal features.",
+    "region filters are convenience geography for evaluation only.",
+    "Positive-only medians ignore zeros so hostile deserts do not drag irrigated corridors down."
+  ],
+  "tests": [
+    {
+      "id": "T_nile_above_britain",
+      "group": "rank",
+      "description": "Nile irrigated corridor out-yields English farmland (Watson vs BAHS intensity).",
+      "expect": "median_a_gt_median_b",
+      "a": {
+        "name": "nile_river",
+        "bbox": [21.0, 32.5, 29.0, 35.0],
+        "has_river": true,
+        "positive_only": true
+      },
+      "b": {
+        "name": "britain_farmland",
+        "region": "great_britain_region",
+        "vegetation": "farmland",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_nile_above_maghreb",
+      "group": "rank",
+      "description": "Nile basin intensity above Maghreb coastal wheat country.",
+      "expect": "median_a_gt_median_b",
+      "a": {
+        "name": "nile_river",
+        "bbox": [21.0, 32.5, 29.0, 35.0],
+        "has_river": true,
+        "positive_only": true
+      },
+      "b": {
+        "name": "maghreb",
+        "region": "maghreb_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_nile_old_world_top_quartile",
+      "group": "intensity",
+      "description": "Nile corridor is top-quartile Old World wheat intensity.",
+      "expect": "median_ge_old_world_q75",
+      "sample": {
+        "name": "nile_river",
+        "bbox": [21.0, 32.5, 29.0, 35.0],
+        "has_river": true,
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_nile_above_desert_no_river",
+      "group": "contrast",
+      "description": "Nile river cells beat adjacent arid desert without river.",
+      "expect": "median_a_gt_median_b",
+      "a": {
+        "name": "nile_river",
+        "bbox": [21.0, 32.5, 29.0, 35.0],
+        "has_river": true,
+        "positive_only": true
+      },
+      "b": {
+        "name": "egypt_desert_no_river",
+        "bbox": [21.0, 32.5, 24.0, 36.0],
+        "vegetation": "desert",
+        "has_river": false
+      }
+    },
+    {
+      "id": "T_sicily_upper_half",
+      "group": "breadbasket",
+      "description": "Sicily Val di Mazara grain exporter sits in upper half of global positives.",
+      "expect": "median_ge_global_median",
+      "sample": {
+        "name": "sicily",
+        "bbox": [36.5, 38.5, 12.0, 15.5],
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_sicily_above_britain",
+      "group": "rank",
+      "description": "Sicilian export wheat intensity at or above English farmland.",
+      "expect": "median_a_ge_median_b",
+      "a": {
+        "name": "sicily",
+        "bbox": [36.5, 38.5, 12.0, 15.5],
+        "positive_only": true
+      },
+      "b": {
+        "name": "britain_farmland",
+        "region": "great_britain_region",
+        "vegetation": "farmland",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_france_upper_half",
+      "group": "breadbasket",
+      "description": "Paris Basin / northern France grain belt in upper half of positives.",
+      "expect": "median_ge_global_median",
+      "sample": {
+        "name": "france",
+        "region": "france_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_italy_upper_half",
+      "group": "breadbasket",
+      "description": "Italian wheat country (Po + peninsula aggregate) in upper half.",
+      "expect": "median_ge_global_median",
+      "sample": {
+        "name": "italy",
+        "region": "italy_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_po_valley_upper_half",
+      "group": "breadbasket",
+      "description": "Po Valley core is upper-half wheat country.",
+      "expect": "median_ge_global_median",
+      "sample": {
+        "name": "po_valley",
+        "bbox": [44.5, 46.5, 7.5, 12.5],
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_steppes_upper_half",
+      "group": "breadbasket",
+      "description": "Black Earth / pontic steppe wheat country in upper half.",
+      "expect": "median_ge_global_median",
+      "sample": {
+        "name": "steppes",
+        "region": "steppes_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_steppes_above_britain",
+      "group": "rank",
+      "description": "Pontic black earth at or above English farmland intensity.",
+      "expect": "median_a_ge_median_b",
+      "a": {
+        "name": "steppes",
+        "region": "steppes_region",
+        "positive_only": true
+      },
+      "b": {
+        "name": "britain_farmland",
+        "region": "great_britain_region",
+        "vegetation": "farmland",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_north_china_upper_half",
+      "group": "breadbasket",
+      "description": "North China Plain winter-wheat heartland in upper half.",
+      "expect": "median_ge_global_median",
+      "sample": {
+        "name": "north_china",
+        "region": "north_china_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_north_china_above_south_china",
+      "group": "rank",
+      "description": "Yellow River wheat belt outranks Yangtze rice south for wheat.",
+      "expect": "median_a_gt_median_b",
+      "a": {
+        "name": "north_china",
+        "region": "north_china_region",
+        "positive_only": true
+      },
+      "b": {
+        "name": "south_china",
+        "region": "south_china_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_punjab_upper_half",
+      "group": "breadbasket",
+      "description": "Punjab / NW Indo-Gangetic rabi wheat in upper half.",
+      "expect": "median_ge_global_median",
+      "sample": {
+        "name": "punjab",
+        "bbox": [27.0, 34.0, 70.0, 78.0],
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_punjab_above_britain",
+      "group": "rank",
+      "description": "Indo-Gangetic irrigated wheat intensity above English farmland.",
+      "expect": "median_a_gt_median_b",
+      "a": {
+        "name": "punjab",
+        "bbox": [27.0, 34.0, 70.0, 78.0],
+        "positive_only": true
+      },
+      "b": {
+        "name": "britain_farmland",
+        "region": "great_britain_region",
+        "vegetation": "farmland",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_punjab_above_bengal",
+      "group": "rank",
+      "description": "Punjab wheat country outranks wet Bengal for wheat.",
+      "expect": "median_a_gt_median_b",
+      "a": {
+        "name": "punjab",
+        "bbox": [27.0, 34.0, 70.0, 78.0],
+        "positive_only": true
+      },
+      "b": {
+        "name": "bengal",
+        "region": "bengal_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_maghreb_not_bottom_quartile",
+      "group": "breadbasket",
+      "description": "Western Maghreb cereal exporters not in Old World bottom quartile.",
+      "expect": "median_ge_old_world_q25",
+      "sample": {
+        "name": "maghreb",
+        "region": "maghreb_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_anatolia_not_bottom_quartile",
+      "group": "secondary",
+      "description": "Anatolian plateau is viable wheat country, not bottom-quartile.",
+      "expect": "median_ge_old_world_q25",
+      "sample": {
+        "name": "anatolia",
+        "region": "anatolia_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_iberia_not_bottom_quartile",
+      "group": "secondary",
+      "description": "Iberian interior wheat country not bottom-quartile.",
+      "expect": "median_ge_old_world_q25",
+      "sample": {
+        "name": "iberia",
+        "region": "iberia_region",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_mesopotamia_river_not_bottom",
+      "group": "secondary",
+      "description": "Sawad / Mesopotamia river corridor not bottom-quartile.",
+      "expect": "median_ge_old_world_q25",
+      "sample": {
+        "name": "mesopotamia_river",
+        "bbox": [29.0, 37.0, 40.0, 49.0],
+        "has_river": true,
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_levant_not_bottom_quartile",
+      "group": "secondary",
+      "description": "Levant cereal belt not Old World bottom-quartile.",
+      "expect": "median_ge_old_world_q25",
+      "sample": {
+        "name": "levant",
+        "bbox": [31.0, 37.0, 34.0, 40.0],
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_britain_mid_not_top_quartile",
+      "group": "rank",
+      "description": "England is well-documented but not a top-quartile Old World surplus granary.",
+      "expect": "median_lt_old_world_q75",
+      "sample": {
+        "name": "britain_farmland",
+        "region": "great_britain_region",
+        "vegetation": "farmland",
+        "positive_only": true
+      }
+    },
+    {
+      "id": "T_indonesia_near_zero",
+      "group": "anti",
+      "description": "Maritime SE Asia is not historical wheat country.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "sample": {
+        "name": "indonesia_maritime",
+        "bbox": [-10.0, 10.0, 95.0, 140.0]
+      }
+    },
+    {
+      "id": "T_congo_jungle_near_zero",
+      "group": "anti",
+      "description": "Congo rainforest is hostile to wheat.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "sample": {
+        "name": "congo_jungle",
+        "bbox": [-6.0, 5.0, 12.0, 30.0],
+        "climate": "tropical",
+        "vegetation_in": ["jungle", "woods"]
+      }
+    },
+    {
+      "id": "T_amazon_near_zero",
+      "group": "anti",
+      "description": "Amazon lowlands are not Old World wheat country in 1337.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "sample": {
+        "name": "amazon",
+        "bbox": [-15.0, 5.0, -75.0, -45.0],
+        "climate": "tropical"
+      }
+    },
+    {
+      "id": "T_sahara_no_river_near_zero",
+      "group": "anti",
+      "description": "Hyper-arid Sahara without river stays near zero.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "sample": {
+        "name": "sahara_no_river",
+        "bbox": [16.0, 30.0, -10.0, 25.0],
+        "vegetation": "desert",
+        "has_river": false
+      }
+    },
+    {
+      "id": "T_arctic_near_zero",
+      "group": "anti",
+      "description": "Arctic climates cannot support wheat.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "sample": {
+        "name": "arctic",
+        "climate": "arctic"
+      }
+    },
+    {
+      "id": "T_carpathia_upper_half",
+      "group": "secondary",
+      "description": "Carpathian / Pannonian wheat country in upper half.",
+      "expect": "median_ge_global_median",
+      "sample": {
+        "name": "carpathia",
+        "region": "carpathia_region",
+        "positive_only": true
+      }
+    }
+  ]
+}

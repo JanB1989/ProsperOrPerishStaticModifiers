@@ -55,135 +55,135 @@
     "veg_woods"
   ],
   "n_features": 53,
-  "cv_r2_yield": 0.6403435884352507,
-  "n_train_rows": 61851,
-  "train_yield_mean": 286.5249427828085,
+  "cv_r2_yield": 0.6367991884266003,
+  "n_train_rows": 61845,
+  "train_yield_mean": 286.5263602047569,
   "train_yield_median": 415.8625,
   "feature_importance_top": [
     {
       "feature": "wheat_irrigated_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.3723167183246807,
-      "importance_std": 0.01191515948558724
+      "importance_mean": 0.3078995254016472,
+      "importance_std": 0.012858446066599385
     },
     {
       "feature": "chelsa_annual_mean_temperature",
-      "importance_mean": 0.14505960866090364,
-      "importance_std": 0.010034074167417193
+      "importance_mean": 0.13544388905508878,
+      "importance_std": 0.015424181724784207
     },
     {
       "feature": "severe_winter",
-      "importance_mean": 0.09495710085782103,
-      "importance_std": 0.008820435059200642
+      "importance_mean": 0.10080497251034717,
+      "importance_std": 0.01198322799201349
     },
     {
       "feature": "has_river_f",
-      "importance_mean": 0.08146882529250316,
-      "importance_std": 0.007557293639155162
-    },
-    {
-      "feature": "hyde_pop_density_1300",
-      "importance_mean": 0.038073749561980647,
-      "importance_std": 0.0020100093600922664
-    },
-    {
-      "feature": "wheat_rainfed_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.022295034301798827,
-      "importance_std": 0.001573548830005176
-    },
-    {
-      "feature": "rye_rainfed_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.021273570709995304,
-      "importance_std": 0.0017536447085188622
-    },
-    {
-      "feature": "chelsa_precipitation_seasonality",
-      "importance_mean": 0.014521141708479235,
-      "importance_std": 0.0019171226213238629
-    },
-    {
-      "feature": "veg_farmland",
-      "importance_mean": 0.013383002057926974,
-      "importance_std": 0.0030727040246013356
+      "importance_mean": 0.07946748104136173,
+      "importance_std": 0.007982504595010832
     },
     {
       "feature": "pyaez_wheat_irrigated_yield",
-      "importance_mean": 0.012494779481294183,
-      "importance_std": 0.0018384654200308255
+      "importance_mean": 0.036483964415162634,
+      "importance_std": 0.003672689371682606
     },
     {
-      "feature": "oats_rainfed_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.009716699366045911,
-      "importance_std": 0.0008288430097437515
+      "feature": "hyde_pop_density_1300",
+      "importance_mean": 0.03545979435704649,
+      "importance_std": 0.004965706176876893
     },
     {
-      "feature": "spam_wheat_rainfed_harvested_area",
-      "importance_mean": 0.008836778040846094,
-      "importance_std": 0.001164559303635832
+      "feature": "rye_rainfed_yield_kg_dm_suitable_km2",
+      "importance_mean": 0.021177802887643954,
+      "importance_std": 0.002561251586113868
     },
     {
-      "feature": "veg_jungle",
-      "importance_mean": 0.008461038750473743,
-      "importance_std": 0.0016204831024903515
+      "feature": "wheat_rainfed_yield_kg_dm_suitable_km2",
+      "importance_mean": 0.020016231837162335,
+      "importance_std": 0.0019322693397694326
+    },
+    {
+      "feature": "chelsa_precipitation_seasonality",
+      "importance_mean": 0.018467065236182717,
+      "importance_std": 0.00322194380321433
+    },
+    {
+      "feature": "veg_farmland",
+      "importance_mean": 0.010819293069192937,
+      "importance_std": 0.0011583930686450148
     },
     {
       "feature": "barley_rainfed_yield_kg_dm_suitable_km2",
-      "importance_mean": 0.00831486370513601,
-      "importance_std": 0.0008568302927573416
+      "importance_mean": 0.008917292779111102,
+      "importance_std": 0.0007088380241036658
     },
     {
-      "feature": "gaez_irrigated_wheat_potential",
-      "importance_mean": 0.007627065724619825,
-      "importance_std": 0.0021508993793166687
-    },
-    {
-      "feature": "chelsa_annual_precipitation",
-      "importance_mean": 0.0070504461428594345,
-      "importance_std": 0.0023018494435133098
-    },
-    {
-      "feature": "gaez_barley_low_input_yield",
-      "importance_mean": 0.0061887424996032725,
-      "importance_std": 0.0008361324440220619
+      "feature": "spam_wheat_rainfed_harvested_area",
+      "importance_mean": 0.008438401664930456,
+      "importance_std": 0.0011078772796006121
     },
     {
       "feature": "pyaez_wheat_rainfed_yield",
-      "importance_mean": 0.005327300549471031,
-      "importance_std": 0.0014675073695700213
-    },
-    {
-      "feature": "veg_forest",
-      "importance_mean": 0.004447998163404909,
-      "importance_std": 0.0003699671832063109
+      "importance_mean": 0.006341952566471937,
+      "importance_std": 0.0014153633844916648
     },
     {
       "feature": "veg_woods",
-      "importance_mean": 0.004249024869484863,
-      "importance_std": 0.001638843447013691
+      "importance_mean": 0.005268132846800722,
+      "importance_std": 0.0025824891911637063
+    },
+    {
+      "feature": "gaez_barley_low_input_yield",
+      "importance_mean": 0.005022057817319958,
+      "importance_std": 0.0009604853792688322
+    },
+    {
+      "feature": "gaez_irrigated_wheat_potential",
+      "importance_mean": 0.004642072208412534,
+      "importance_std": 0.0014394033754502448
+    },
+    {
+      "feature": "chelsa_annual_precipitation",
+      "importance_mean": 0.0046332319822648405,
+      "importance_std": 0.0006177666940784932
+    },
+    {
+      "feature": "veg_forest",
+      "importance_mean": 0.0036272981527856185,
+      "importance_std": 0.00013459782081601056
+    },
+    {
+      "feature": "oats_rainfed_yield_kg_dm_suitable_km2",
+      "importance_mean": 0.003054150591412036,
+      "importance_std": 0.0005964030440303456
+    },
+    {
+      "feature": "terrain_irrigable_fraction",
+      "importance_mean": 0.0023448026742226846,
+      "importance_std": 0.00022379044575467435
     },
     {
       "feature": "temp_distance_from_optimum",
-      "importance_mean": 0.002705389351536719,
-      "importance_std": 0.0007961659969079356
+      "importance_mean": 0.0021081603458519282,
+      "importance_std": 0.001150648802630205
     },
     {
-      "feature": "veg_grasslands",
-      "importance_mean": 0.0017171449675675299,
-      "importance_std": 0.000479683155822705
+      "feature": "gaez_wheat_irrigated_low_input_yield",
+      "importance_mean": 0.002096694357239165,
+      "importance_std": 0.0007114496290629102
+    },
+    {
+      "feature": "veg_jungle",
+      "importance_mean": 0.0013286741868526464,
+      "importance_std": 0.0007044195097460453
+    },
+    {
+      "feature": "gaez_wheat_low_input_yield",
+      "importance_mean": 0.001235706763157235,
+      "importance_std": 0.0005298130310736179
     },
     {
       "feature": "soil_quality_ord",
-      "importance_mean": 0.00164708894876045,
-      "importance_std": 0.0005650899009983464
-    },
-    {
-      "feature": "gaez_wheat_low_input_yield_suitable_fraction",
-      "importance_mean": 0.0013529984114165894,
-      "importance_std": 0.0006221615793010862
-    },
-    {
-      "feature": "gaez_wheat_irrigated_low_input_yield_suitable_fraction",
-      "importance_mean": 0.0013238159808012517,
-      "importance_std": 0.00117347299882457
+      "importance_mean": 0.0012199729507311463,
+      "importance_std": 0.00029782178523701444
     }
   ],
   "bahs_wheat_gross_kg_ha": 515.0,
@@ -303,7 +303,7 @@
   ],
   "n_historic_train_rows": 40382,
   "n_hostile_train_rows": 2500,
-  "n_physical_soft_rows": 10965,
+  "n_physical_soft_rows": 10959,
   "physical_scale_to_bahs": 0.28426835242572723,
   "physical_median_on_bahs": 1585.2098770570599,
   "historic_median_kg_ha": 450.625,
@@ -324,90 +324,424 @@
     "A3_tropical_below_temperate": {
       "passed": true,
       "tropical_mean_kg_ha": 0.0,
-      "temperate_mean_kg_ha": 422.0498294497779
+      "temperate_mean_kg_ha": 422.08683970397294
     },
     "A4_nw_europe_high": {
       "passed": true,
-      "nw_europe_mean_kg_ha": 447.3661401279336,
+      "nw_europe_mean_kg_ha": 446.23800826133834,
       "n": 2420
     },
     "A5_bahs_median_band": {
       "passed": true,
-      "nw_farmland_positive_median_kg_ha": 542.7378820015455,
+      "nw_farmland_positive_median_kg_ha": 539.4767500117734,
       "target_kg_ha": 515.0,
       "n": 93
     },
     "A6_model_fit": {
       "passed": true,
-      "cv_r2_yield": 0.6403435884352507,
+      "cv_r2_yield": 0.6367991884266003,
       "note": "GroupKFold by location_tag"
     },
     "H_historic_location_fit": {
       "passed": true,
-      "mean_abs_pct_err": 0.04242822812778992,
+      "mean_abs_pct_err": 0.04362148601755092,
       "n": 69,
-      "pred_median": 432.082446480431,
+      "pred_median": 436.3974417347329,
       "label_median": 441.6125
     },
     "D_continuous_enough": {
       "passed": true,
-      "n_unique_10kg_bins": 141
+      "n_unique_10kg_bins": 143
     }
   },
   "validation_metrics": {
     "tech_scale": 1.0,
-    "cv_r2_yield": 0.6403435884352507,
-    "nw_farmland_positive_median_kg_ha": 542.7378820015455,
-    "nw_europe_mean_kg_ha": 447.3661401279336,
+    "cv_r2_yield": 0.6367991884266003,
+    "nw_farmland_positive_median_kg_ha": 539.4767500117734,
+    "nw_europe_mean_kg_ha": 446.23800826133834,
     "arctic_mean_kg_ha": 0.0,
-    "n_unique_10kg_bins": 141.0,
-    "assumption_tests_passed": 7.0,
-    "assumption_tests_total": 7.0,
+    "n_unique_10kg_bins": 143.0,
+    "assumption_tests_passed": 28.0,
+    "assumption_tests_total": 28.0,
     "physical_gates_passed": 1.0,
     "assumption_gates_passed": 1.0
   },
   "assumption_tests": {
     "T_nile_above_britain": {
+      "group": "rank",
+      "description": "Nile irrigated corridor out-yields English farmland (Watson vs BAHS intensity).",
+      "expect": "median_a_gt_median_b",
       "passed": true,
-      "nile_pos_median_kg_ha": 1083.715601875614,
-      "britain_farmland_pos_median_kg_ha": 391.1091940569436,
-      "n_nile": 47,
-      "n_britain": 16
+      "a_name": "nile_river",
+      "b_name": "britain_farmland",
+      "a_median_kg_ha": 1036.0562721101558,
+      "b_median_kg_ha": 392.67230850917014,
+      "n_a": 47,
+      "n_b": 16
     },
-    "T_france_upper_half": {
+    "T_nile_above_maghreb": {
+      "group": "rank",
+      "description": "Nile basin intensity above Maghreb coastal wheat country.",
+      "expect": "median_a_gt_median_b",
       "passed": true,
-      "pos_median_kg_ha": 503.4362497623294,
-      "global_pos_median_kg_ha": 336.7509645751548,
-      "n": 446
+      "a_name": "nile_river",
+      "b_name": "maghreb",
+      "a_median_kg_ha": 1036.0562721101558,
+      "b_median_kg_ha": 322.1590147379274,
+      "n_a": 47,
+      "n_b": 277
     },
-    "T_steppes_upper_half": {
+    "T_nile_old_world_top_quartile": {
+      "group": "intensity",
+      "description": "Nile corridor is top-quartile Old World wheat intensity.",
+      "expect": "median_ge_old_world_q75",
+      "threshold_kg_ha": 549.3046667964497,
       "passed": true,
-      "pos_median_kg_ha": 551.9842430040652,
-      "global_pos_median_kg_ha": 336.7509645751548,
-      "n": 318
+      "sample_name": "nile_river",
+      "pos_median_kg_ha": 1036.0562721101558,
+      "mean_kg_ha": 943.1626118068351,
+      "n": 47,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_nile_above_desert_no_river": {
+      "group": "contrast",
+      "description": "Nile river cells beat adjacent arid desert without river.",
+      "expect": "median_a_gt_median_b",
+      "passed": true,
+      "a_name": "nile_river",
+      "b_name": "egypt_desert_no_river",
+      "a_median_kg_ha": 1036.0562721101558,
+      "b_median_kg_ha": 0.0,
+      "n_a": 47,
+      "n_b": 27
     },
     "T_sicily_upper_half": {
+      "group": "breadbasket",
+      "description": "Sicily Val di Mazara grain exporter sits in upper half of global positives.",
+      "expect": "median_ge_global_median",
+      "threshold_kg_ha": 335.72458515719035,
       "passed": true,
-      "pos_median_kg_ha": 443.90619445298614,
-      "global_pos_median_kg_ha": 336.7509645751548,
-      "n": 22
+      "sample_name": "sicily",
+      "pos_median_kg_ha": 456.5896470210457,
+      "mean_kg_ha": 447.4216909584487,
+      "n": 22,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_sicily_above_britain": {
+      "group": "rank",
+      "description": "Sicilian export wheat intensity at or above English farmland.",
+      "expect": "median_a_ge_median_b",
+      "passed": true,
+      "a_name": "sicily",
+      "b_name": "britain_farmland",
+      "a_median_kg_ha": 456.5896470210457,
+      "b_median_kg_ha": 392.67230850917014,
+      "n_a": 22,
+      "n_b": 16
+    },
+    "T_france_upper_half": {
+      "group": "breadbasket",
+      "description": "Paris Basin / northern France grain belt in upper half of positives.",
+      "expect": "median_ge_global_median",
+      "threshold_kg_ha": 335.72458515719035,
+      "passed": true,
+      "sample_name": "france",
+      "pos_median_kg_ha": 505.518348126569,
+      "mean_kg_ha": 476.8654109189737,
+      "n": 446,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_italy_upper_half": {
+      "group": "breadbasket",
+      "description": "Italian wheat country (Po + peninsula aggregate) in upper half.",
+      "expect": "median_ge_global_median",
+      "threshold_kg_ha": 335.72458515719035,
+      "passed": true,
+      "sample_name": "italy",
+      "pos_median_kg_ha": 404.8081398692628,
+      "mean_kg_ha": 397.57630157724725,
+      "n": 299,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_po_valley_upper_half": {
+      "group": "breadbasket",
+      "description": "Po Valley core is upper-half wheat country.",
+      "expect": "median_ge_global_median",
+      "threshold_kg_ha": 335.72458515719035,
+      "passed": true,
+      "sample_name": "po_valley",
+      "pos_median_kg_ha": 374.1280337570165,
+      "mean_kg_ha": 385.393828415111,
+      "n": 99,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_steppes_upper_half": {
+      "group": "breadbasket",
+      "description": "Black Earth / pontic steppe wheat country in upper half.",
+      "expect": "median_ge_global_median",
+      "threshold_kg_ha": 335.72458515719035,
+      "passed": true,
+      "sample_name": "steppes",
+      "pos_median_kg_ha": 550.7027875843097,
+      "mean_kg_ha": 540.0077209767805,
+      "n": 317,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_steppes_above_britain": {
+      "group": "rank",
+      "description": "Pontic black earth at or above English farmland intensity.",
+      "expect": "median_a_ge_median_b",
+      "passed": true,
+      "a_name": "steppes",
+      "b_name": "britain_farmland",
+      "a_median_kg_ha": 550.7027875843097,
+      "b_median_kg_ha": 392.67230850917014,
+      "n_a": 317,
+      "n_b": 16
+    },
+    "T_north_china_upper_half": {
+      "group": "breadbasket",
+      "description": "North China Plain winter-wheat heartland in upper half.",
+      "expect": "median_ge_global_median",
+      "threshold_kg_ha": 335.72458515719035,
+      "passed": true,
+      "sample_name": "north_china",
+      "pos_median_kg_ha": 552.8596195186631,
+      "mean_kg_ha": 525.0975685656795,
+      "n": 518,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_north_china_above_south_china": {
+      "group": "rank",
+      "description": "Yellow River wheat belt outranks Yangtze rice south for wheat.",
+      "expect": "median_a_gt_median_b",
+      "passed": true,
+      "a_name": "north_china",
+      "b_name": "south_china",
+      "a_median_kg_ha": 552.8596195186631,
+      "b_median_kg_ha": 133.2584047334393,
+      "n_a": 518,
+      "n_b": 410
+    },
+    "T_punjab_upper_half": {
+      "group": "breadbasket",
+      "description": "Punjab / NW Indo-Gangetic rabi wheat in upper half.",
+      "expect": "median_ge_global_median",
+      "threshold_kg_ha": 335.72458515719035,
+      "passed": true,
+      "sample_name": "punjab",
+      "pos_median_kg_ha": 668.5017386069766,
+      "mean_kg_ha": 667.2443163926305,
+      "n": 168,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_punjab_above_britain": {
+      "group": "rank",
+      "description": "Indo-Gangetic irrigated wheat intensity above English farmland.",
+      "expect": "median_a_gt_median_b",
+      "passed": true,
+      "a_name": "punjab",
+      "b_name": "britain_farmland",
+      "a_median_kg_ha": 668.5017386069766,
+      "b_median_kg_ha": 392.67230850917014,
+      "n_a": 168,
+      "n_b": 16
+    },
+    "T_punjab_above_bengal": {
+      "group": "rank",
+      "description": "Punjab wheat country outranks wet Bengal for wheat.",
+      "expect": "median_a_gt_median_b",
+      "passed": true,
+      "a_name": "punjab",
+      "b_name": "bengal",
+      "a_median_kg_ha": 668.5017386069766,
+      "b_median_kg_ha": 97.0991683825138,
+      "n_a": 168,
+      "n_b": 221
     },
     "T_maghreb_not_bottom_quartile": {
+      "group": "breadbasket",
+      "description": "Western Maghreb cereal exporters not in Old World bottom quartile.",
+      "expect": "median_ge_old_world_q25",
+      "threshold_kg_ha": 116.93276161577359,
       "passed": true,
-      "pos_median_kg_ha": 332.73293281023473,
-      "old_world_pos_q25_kg_ha": 122.47748895152017,
-      "n": 265
+      "sample_name": "maghreb",
+      "pos_median_kg_ha": 322.1590147379274,
+      "mean_kg_ha": 338.85447278970753,
+      "n": 277,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
     },
-    "T_punjab_not_bottom_quartile": {
+    "T_anatolia_not_bottom_quartile": {
+      "group": "secondary",
+      "description": "Anatolian plateau is viable wheat country, not bottom-quartile.",
+      "expect": "median_ge_old_world_q25",
+      "threshold_kg_ha": 116.93276161577359,
       "passed": true,
-      "pos_median_kg_ha": 670.8737502785953,
-      "old_world_pos_q25_kg_ha": 122.47748895152017,
-      "n": 167
+      "sample_name": "anatolia",
+      "pos_median_kg_ha": 598.7464392592714,
+      "mean_kg_ha": 599.2649285588727,
+      "n": 258,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_iberia_not_bottom_quartile": {
+      "group": "secondary",
+      "description": "Iberian interior wheat country not bottom-quartile.",
+      "expect": "median_ge_old_world_q25",
+      "threshold_kg_ha": 116.93276161577359,
+      "passed": true,
+      "sample_name": "iberia",
+      "pos_median_kg_ha": 389.5324593739336,
+      "mean_kg_ha": 352.22744041053994,
+      "n": 424,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_mesopotamia_river_not_bottom": {
+      "group": "secondary",
+      "description": "Sawad / Mesopotamia river corridor not bottom-quartile.",
+      "expect": "median_ge_old_world_q25",
+      "threshold_kg_ha": 116.93276161577359,
+      "passed": true,
+      "sample_name": "mesopotamia_river",
+      "pos_median_kg_ha": 736.8849088082168,
+      "mean_kg_ha": 722.8410108005017,
+      "n": 84,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_levant_not_bottom_quartile": {
+      "group": "secondary",
+      "description": "Levant cereal belt not Old World bottom-quartile.",
+      "expect": "median_ge_old_world_q25",
+      "threshold_kg_ha": 116.93276161577359,
+      "passed": true,
+      "sample_name": "levant",
+      "pos_median_kg_ha": 495.5954500645792,
+      "mean_kg_ha": 470.0437374550245,
+      "n": 73,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_britain_mid_not_top_quartile": {
+      "group": "rank",
+      "description": "England is well-documented but not a top-quartile Old World surplus granary.",
+      "expect": "median_lt_old_world_q75",
+      "threshold_kg_ha": 549.3046667964497,
+      "passed": true,
+      "sample_name": "britain_farmland",
+      "pos_median_kg_ha": 392.67230850917014,
+      "mean_kg_ha": 406.7044359015628,
+      "n": 16,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
     },
     "T_indonesia_near_zero": {
+      "group": "anti",
+      "description": "Maritime SE Asia is not historical wheat country.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
       "passed": true,
-      "mean_kg_ha": 3.1621824165657832,
-      "n": 581
+      "sample_name": "indonesia_maritime",
+      "pos_median_kg_ha": 0.0,
+      "mean_kg_ha": 3.7345464328302276,
+      "n": 581,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_congo_jungle_near_zero": {
+      "group": "anti",
+      "description": "Congo rainforest is hostile to wheat.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "passed": true,
+      "sample_name": "congo_jungle",
+      "pos_median_kg_ha": 0.0,
+      "mean_kg_ha": 0.0,
+      "n": 113,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_amazon_near_zero": {
+      "group": "anti",
+      "description": "Amazon lowlands are not Old World wheat country in 1337.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "passed": true,
+      "sample_name": "amazon",
+      "pos_median_kg_ha": 0.0,
+      "mean_kg_ha": 6.266266620425334,
+      "n": 192,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_sahara_no_river_near_zero": {
+      "group": "anti",
+      "description": "Hyper-arid Sahara without river stays near zero.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "passed": true,
+      "sample_name": "sahara_no_river",
+      "pos_median_kg_ha": 0.0,
+      "mean_kg_ha": 8.37242280431403,
+      "n": 37,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_arctic_near_zero": {
+      "group": "anti",
+      "description": "Arctic climates cannot support wheat.",
+      "expect": "mean_lt",
+      "threshold_kg_ha": 80.0,
+      "passed": true,
+      "sample_name": "arctic",
+      "pos_median_kg_ha": 0.0,
+      "mean_kg_ha": 0.0,
+      "n": 2115,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
+    },
+    "T_carpathia_upper_half": {
+      "group": "secondary",
+      "description": "Carpathian / Pannonian wheat country in upper half.",
+      "expect": "median_ge_global_median",
+      "threshold_kg_ha": 335.72458515719035,
+      "passed": true,
+      "sample_name": "carpathia",
+      "pos_median_kg_ha": 655.1756264683645,
+      "mean_kg_ha": 610.514176582738,
+      "n": 260,
+      "global_pos_median_kg_ha": 335.72458515719035,
+      "old_world_q25_kg_ha": 116.93276161577359,
+      "old_world_q75_kg_ha": 549.3046667964497
     }
   }
 }

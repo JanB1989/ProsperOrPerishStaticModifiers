@@ -341,6 +341,35 @@ def test_bahs_historic_labels_convert_and_join() -> None:
     assert "chelsa_annual_mean_temperature" in feats or "has_river_f" in feats
 
 
+def test_historical_assumption_catalog_size() -> None:
+    from prosper_or_perish_static_modifiers.pnp_assumption_tests import (
+        assumption_catalog_stats,
+        load_assumption_catalog,
+    )
+
+    stats = assumption_catalog_stats()
+    assert 20 <= int(stats["n_tests"]) <= 40
+    catalog = load_assumption_catalog()
+    ids = [t["id"] for t in catalog["tests"]]
+    assert len(ids) == len(set(ids))
+    assert "T_nile_above_britain" in ids
+    assert "T_indonesia_near_zero" in ids
+    assert "T_north_china_upper_half" in ids
+    assert "T_po_valley_upper_half" in ids
+    for t in catalog["tests"]:
+        assert "expect" in t and "id" in t
+        assert t["expect"] in {
+            "median_a_gt_median_b",
+            "median_a_ge_median_b",
+            "median_ge_global_median",
+            "median_ge_old_world_q25",
+            "median_ge_old_world_q50",
+            "median_ge_old_world_q75",
+            "median_lt_old_world_q75",
+            "mean_lt",
+        }
+
+
 def test_suitability_class_and_pnp_publish(tmp_path: Path) -> None:
     from prosper_or_perish_static_modifiers.external_layers import PNP_LAYERS
     from prosper_or_perish_static_modifiers.pnp_model import suitability_class_from_fraction

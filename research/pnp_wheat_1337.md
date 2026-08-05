@@ -21,7 +21,7 @@ Climate / soil / water / GAEZ / PyAEZ attributes. No `region` as a model feature
 ## Validation (all must pass)
 
 - Physical A\*/H\*/D\* gates
-- Assumption T\* gates (Nile > Britain farmland; France/steppes/Sicily upper half; Maghreb/Punjab not bottom quartile; Indonesia near zero)
+- Dedicated historical assumption catalog ([`research/pnp_wheat_historical_assumptions.json`](pnp_wheat_historical_assumptions.json)) — **28** ~1300 breadbasket / anti-breadbasket tests (Nile, Sicily, France, Po, steppes, N. China, Punjab, Maghreb, Anatolia, Iberia, Mesopotamia, Levant, plus tropical/desert/arctic zeros and key ranks). Runner: `pnp_assumption_tests.py`.
 
 ## Outputs
 
