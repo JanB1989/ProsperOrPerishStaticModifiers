@@ -11,6 +11,15 @@ from sklearn.model_selection import cross_val_score
 
 from prosper_or_perish_static_modifiers.crops import HECTARES_PER_KM2
 from prosper_or_perish_static_modifiers.geometry import LOCATION_TAG
+from prosper_or_perish_static_modifiers.pnp_evidence import (
+    apply_evidence_target_scales,
+    apply_residual_calibrator,
+    default_evidence_path,
+    fit_evidence_residual_calibrator,
+    irrigated_prefer_regions,
+    load_evidence_catalog,
+    validate_evidence_gates,
+)
 
 # BAHS / Pretty 1990 Bishop of Winchester manors 1283–1349 (gross wheat).
 BAHS_WHEAT_GROSS_KG_HA = 515.0
@@ -34,6 +43,7 @@ NUMERIC_FEATURES: tuple[str, ...] = (
     "gaez_barley_yield_km2",
     "gaez_rye_yield_km2",
     "gaez_oats_yield_km2",
+    "prefer_irrigated",
 )
 
 # One-hot / ordinal categorical expansions appended in assemble_training_frame.
@@ -57,21 +67,22 @@ SOIL_QUALITY_ORD: dict[str, float] = {
 # Monotonic constraints aligned with NUMERIC_FEATURES order (+ categoricals unconstrained).
 #  1 = increasing, -1 = decreasing, 0 = none
 NUMERIC_MONOTONIC: tuple[int, ...] = (
-    0,   # temperature (handled via temp_distance)
-    1,   # precipitation
-    0,   # seasonality
-    0,   # lat
-    0,   # lon
-    0,   # abs_lat
-    1,   # aridity_proxy (higher precip/(T+10) better for drylands)
+    0,  # temperature (handled via temp_distance)
+    1,  # precipitation
+    0,  # seasonality
+    0,  # lat
+    0,  # lon
+    0,  # abs_lat
+    1,  # aridity_proxy (higher precip/(T+10) better for drylands)
     -1,  # temp distance from optimum
     -1,  # severe winter
-    1,   # soil quality
-    1,   # modern gaez wheat yield
-    1,   # modern gaez wheat suitability
-    1,   # barley analogue
-    1,   # rye analogue
-    1,   # oats analogue
+    1,  # soil quality
+    1,  # modern gaez wheat yield
+    1,  # modern gaez wheat suitability
+    1,  # barley analogue
+    1,  # rye analogue
+    1,  # oats analogue
+    1,  # prefer_irrigated corridor flag
 )
 
 
@@ -103,8 +114,13 @@ def assemble_training_frame(
     candidates_path: Path,
     pyaez_yields_path: Path,
     gaez_wide_path: Path,
-) -> pl.DataFrame:
-    """Join location features + GAEZ analogues + calibrated 1337 wheat targets."""
+    evidence_path: Path | None = None,
+    geometry_path: Path | None = None,
+) -> tuple[pl.DataFrame, dict]:
+    """Join location features + GAEZ analogues + evidence-adjusted 1337 wheat targets."""
+
+    catalog = load_evidence_catalog(evidence_path or default_evidence_path())
+    prefer_regions = irrigated_prefer_regions(catalog)
 
     cand_cols = [
         LOCATION_TAG,
@@ -118,11 +134,25 @@ def assemble_training_frame(
         "climate",
         "climate_winter",
         "soil_quality",
+        "region",
+        "super_region",
     ]
     cand_schema = set(pl.scan_parquet(candidates_path).collect_schema().names())
     candidates = pl.read_parquet(candidates_path).select(
         [c for c in cand_cols if c in cand_schema]
     )
+
+    if "region" not in candidates.columns and geometry_path is not None and geometry_path.is_file():
+        geom = pl.read_parquet(geometry_path).select(
+            LOCATION_TAG,
+            "region",
+            "super_region",
+        )
+        candidates = candidates.join(geom, on=LOCATION_TAG, how="left")
+    if "region" not in candidates.columns:
+        raise ValueError(
+            "training frame needs EU5 region tags (candidates or geometry) for evidence matching"
+        )
 
     gaez_wanted = {
         "wheat_rainfed_yield_kg_dm_suitable_km2": "gaez_wheat_yield_km2",
@@ -165,18 +195,37 @@ def assemble_training_frame(
         pl.col("suitable_fraction").alias("ir_suit"),
         pl.col("production_density_p50_kg_dm_total_ha").alias("ir_prod"),
     )
-    # Best-achievable prefers rainfed; irrigated only where rainfed is already viable
-    # (historically-plausible irrigation), not in barren hyper-arid interiors.
-    modes = rainfed.join(irrigated, on=LOCATION_TAG, how="full", coalesce=True).with_columns(
-        pl.when(pl.col("rf_yield").fill_null(0.0) > 50.0)
+    modes = rainfed.join(irrigated, on=LOCATION_TAG, how="full", coalesce=True)
+
+    # Attach region early so irrigation corridors can prefer irrigated PyAEZ.
+    region_lookup = candidates.select(LOCATION_TAG, "region")
+    modes = modes.join(region_lookup, on=LOCATION_TAG, how="left")
+    prefer_flag = (
+        pl.col("region")
+        .cast(pl.String)
+        .is_in(sorted(prefer_regions))
+        .fill_null(False)
+    )
+    # Default: rainfed-first (historically-plausible irrigation only where rainfed
+    # already viable). Evidence irrigated corridors: take max(rf, ir) freely so
+    # Nile/Indus floodplain cells are not zeroed by arid rainfed failures.
+    modes = modes.with_columns(
+        prefer_flag.cast(pl.Float64).alias("prefer_irrigated"),
+        pl.when(prefer_flag)
+        .then(pl.max_horizontal(pl.col("rf_yield").fill_null(0.0), pl.col("ir_yield").fill_null(0.0)))
+        .when(pl.col("rf_yield").fill_null(0.0) > 50.0)
         .then(pl.max_horizontal("rf_yield", "ir_yield"))
         .otherwise(pl.col("rf_yield").fill_null(0.0))
         .alias("target_yield_kg_ha"),
-        pl.when(pl.col("rf_yield").fill_null(0.0) > 50.0)
+        pl.when(prefer_flag)
+        .then(pl.max_horizontal(pl.col("rf_suit").fill_null(0.0), pl.col("ir_suit").fill_null(0.0)))
+        .when(pl.col("rf_yield").fill_null(0.0) > 50.0)
         .then(pl.max_horizontal("rf_suit", "ir_suit"))
         .otherwise(pl.col("rf_suit").fill_null(0.0))
         .alias("target_suitable_fraction"),
-        pl.when(pl.col("rf_yield").fill_null(0.0) > 50.0)
+        pl.when(prefer_flag)
+        .then(pl.max_horizontal(pl.col("rf_prod").fill_null(0.0), pl.col("ir_prod").fill_null(0.0)))
+        .when(pl.col("rf_yield").fill_null(0.0) > 50.0)
         .then(pl.max_horizontal("rf_prod", "ir_prod"))
         .otherwise(pl.col("rf_prod").fill_null(0.0))
         .alias("target_production_density_kg_ha"),
@@ -186,13 +235,17 @@ def assemble_training_frame(
         "target_yield_kg_ha",
         "target_suitable_fraction",
         "target_production_density_kg_ha",
+        "prefer_irrigated",
     )
 
     positive = best.filter(pl.col("target_yield_kg_ha") > 0)["target_yield_kg_ha"]
     if positive.len() == 0:
         raise ValueError("no positive wheat yields in pyaez_1337_yields")
     median_pos = float(positive.median())
-    tech_scale = BAHS_WHEAT_GROSS_KG_HA / median_pos if median_pos > 0 else 1.0
+    global_target = float(
+        catalog.global_anchor.get("target_positive_median_kg_ha", BAHS_WHEAT_GROSS_KG_HA)
+    )
+    tech_scale = global_target / median_pos if median_pos > 0 else 1.0
 
     best = best.with_columns(
         (pl.col("target_yield_kg_ha") * tech_scale).alias("target_yield_kg_ha"),
@@ -222,10 +275,22 @@ def assemble_training_frame(
             .replace_strict(SOIL_QUALITY_ORD, default=3.0)
             .cast(pl.Float64)
             .alias("soil_quality_ord"),
+            pl.col("prefer_irrigated").fill_null(0.0),
         )
     )
+    frame, evidence_meta = apply_evidence_target_scales(frame, catalog)
     frame = _encode_categories(frame)
-    return frame
+    assemble_meta = {
+        "tech_scale": tech_scale,
+        "global_anchor_kg_ha": global_target,
+        "pyaez_positive_median_before_scale": median_pos,
+        "prefer_irrigated_regions": sorted(prefer_regions),
+        "evidence_path": str(catalog.path),
+        "evidence_version": catalog.version,
+        "evidence_target_scaling": evidence_meta,
+        "n_evidence_entries": len(catalog.evidence),
+    }
+    return frame, assemble_meta
 
 
 def feature_columns(frame: pl.DataFrame) -> list[str]:
@@ -352,7 +417,13 @@ def predict_pnp_wheat(
     x = _matrix(frame, feature_cols)
     yield_ha = np.clip(yield_model.predict(x), 0.0, None)
     suit = np.clip(suit_model.predict(x), 0.0, 1.0)
-    # Soft zero-out where climate / modern GAEZ imply wheat is not viable.
+    # Soft zero-out where climate / modern GAEZ imply wheat is not viable —
+    # but never zero irrigated-evidence corridors (prefer_irrigated=1).
+    prefer = (
+        frame["prefer_irrigated"].fill_null(0.0).to_numpy()
+        if "prefer_irrigated" in frame.columns
+        else np.zeros(len(yield_ha))
+    )
     if "gaez_wheat_suitable_fraction" in frame.columns and "climate" in frame.columns:
         gaez_sf = frame["gaez_wheat_suitable_fraction"].fill_null(0.0).to_numpy()
         climate = frame["climate"].cast(pl.String).to_numpy()
@@ -368,7 +439,7 @@ def predict_pnp_wheat(
         )
         arctic = climate == "arctic"
         hyper_arid = (climate == "arid") & (vegetation == "desert") & (precip < 150)
-        hostile = (arctic & (gaez_sf <= 0.05)) | hyper_arid
+        hostile = ((arctic & (gaez_sf <= 0.05)) | hyper_arid) & (prefer < 0.5)
         yield_ha = np.where(hostile, 0.0, yield_ha)
         suit = np.where(hostile, 0.0, suit)
 
@@ -391,6 +462,7 @@ def validate_pnp_predictions(
     *,
     tech_scale: float,
     cv_r2_yield: float,
+    evidence_path: Path | None = None,
 ) -> ValidationReport:
     joined = frame.select(
         LOCATION_TAG,
@@ -400,6 +472,7 @@ def validate_pnp_predictions(
         "calibrated_lat",
         "calibrated_lon",
         "abs_lat",
+        "region",
     ).join(predictions, on=LOCATION_TAG, how="inner")
 
     checks: dict[str, dict[str, object]] = {}
@@ -414,10 +487,14 @@ def validate_pnp_predictions(
         "n": arctic.height,
     }
 
+    # Hyper-arid desert excluding evidence irrigated corridors.
     arid = joined.filter(
         (pl.col("climate") == "arid")
         & (pl.col("vegetation") == "desert")
         & (pl.col("chelsa_annual_precipitation_target") < 150)
+        & (~pl.col("region").cast(pl.String).is_in(
+            ["egypt_region", "crescent_region", "hindustan_region"]
+        ))
     )
     arid_mean = float(arid["pred_yield_kg_ha"].mean() or 0.0)
     checks["A2_hyper_arid_low"] = {
@@ -465,6 +542,10 @@ def validate_pnp_predictions(
         "cv_r2_yield": cv_r2_yield,
     }
 
+    catalog = load_evidence_catalog(evidence_path or default_evidence_path())
+    evidence_checks = validate_evidence_gates(frame, predictions, catalog)
+    checks.update(evidence_checks)
+
     passed = all(bool(v["passed"]) for v in checks.values())
     return ValidationReport(
         passed=passed,
@@ -475,6 +556,10 @@ def validate_pnp_predictions(
             "positive_median_kg_ha": median_pos,
             "nw_europe_mean_kg_ha": nw_mean,
             "arctic_mean_kg_ha": arctic_mean,
+            "n_evidence_gates": float(len(evidence_checks)),
+            "n_evidence_gates_passed": float(
+                sum(1 for v in evidence_checks.values() if v.get("passed"))
+            ),
         },
         tech_scale=tech_scale,
     )
@@ -486,14 +571,20 @@ def train_and_predict_pnp_wheat(
     pyaez_yields_path: Path,
     gaez_wide_path: Path,
     model_dir: Path,
+    evidence_path: Path | None = None,
+    geometry_path: Path | None = None,
 ) -> tuple[pl.DataFrame, ValidationReport, dict]:
-    """Full train → predict → validate pipeline; persist model card JSON."""
+    """Full train → evidence-calibrate → validate pipeline; persist model card JSON."""
 
-    frame = assemble_training_frame(
+    evidence_path = evidence_path or default_evidence_path()
+    frame, assemble_meta = assemble_training_frame(
         candidates_path=candidates_path,
         pyaez_yields_path=pyaez_yields_path,
         gaez_wide_path=gaez_wide_path,
+        evidence_path=evidence_path,
+        geometry_path=geometry_path,
     )
+    catalog = load_evidence_catalog(evidence_path)
     yield_model, suit_model, columns, train_meta = train_pnp_wheat_models(frame)
     predictions = predict_pnp_wheat(
         frame,
@@ -501,15 +592,56 @@ def train_and_predict_pnp_wheat(
         suit_model=suit_model,
         feature_cols=columns,
     )
+    calibrator, calib_meta = fit_evidence_residual_calibrator(
+        frame, predictions, catalog, columns
+    )
+    if calibrator is not None:
+        predictions = apply_residual_calibrator(
+            frame,
+            predictions,
+            calibrator,
+            columns,
+            scale_clip=catalog.scale_clip,
+        )
+        # Re-apply hostile zeroing after residual (preserve irrigated corridors).
+        prefer = (
+            frame.select(LOCATION_TAG, "prefer_irrigated")
+            .join(predictions.select(LOCATION_TAG, "pred_yield_kg_ha"), on=LOCATION_TAG)
+        )
+        # Hostile re-zero using original predict logic features.
+        climate = frame["climate"].cast(pl.String).to_numpy()
+        vegetation = frame["vegetation"].cast(pl.String).to_numpy()
+        precip = frame["chelsa_annual_precipitation_target"].fill_null(0.0).to_numpy()
+        gaez_sf = frame["gaez_wheat_suitable_fraction"].fill_null(0.0).to_numpy()
+        prefer_arr = frame["prefer_irrigated"].fill_null(0.0).to_numpy()
+        arctic = climate == "arctic"
+        hyper_arid = (climate == "arid") & (vegetation == "desert") & (precip < 150)
+        hostile = ((arctic & (gaez_sf <= 0.05)) | hyper_arid) & (prefer_arr < 0.5)
+        y = predictions["pred_yield_kg_ha"].to_numpy().astype(np.float64)
+        suit = predictions["pnp_wheat_suitable_fraction"].to_numpy().astype(np.float64)
+        y = np.where(hostile, 0.0, y)
+        suit = np.where(hostile, 0.0, suit)
+        predictions = predictions.with_columns(
+            pl.Series("pred_yield_kg_ha", y),
+            pl.Series("pnp_wheat_suitable_fraction", suit),
+            pl.Series("pnp_wheat_yield", y * HECTARES_PER_KM2),
+            pl.Series("pnp_wheat_production_density", y * suit * HECTARES_PER_KM2),
+            pl.Series("pnp_wheat_suitability_class", suitability_class_from_fraction(suit)),
+        )
+        _ = prefer  # silence unused if join kept for debug
+
     report = validate_pnp_predictions(
         frame,
         predictions,
         tech_scale=float(train_meta["tech_scale"]),
         cv_r2_yield=float(train_meta["cv_r2_yield"]),
+        evidence_path=evidence_path,
     )
     model_dir.mkdir(parents=True, exist_ok=True)
     card = {
         **train_meta,
+        **assemble_meta,
+        "residual_calibration": calib_meta,
         "validation_passed": report.passed,
         "validation_checks": report.checks,
         "validation_metrics": report.metrics,
@@ -518,6 +650,10 @@ def train_and_predict_pnp_wheat(
         json.dumps(card, indent=2),
         encoding="utf-8",
     )
+    # Also mirror into research/ for the docs trail.
+    research_card = Path(__file__).resolve().parents[2] / "research" / "pnp_wheat_model_card.json"
+    research_card.write_text(json.dumps(card, indent=2), encoding="utf-8")
+
     wide = predictions.select(
         LOCATION_TAG,
         "pnp_wheat_production_density",

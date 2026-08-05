@@ -1,0 +1,233 @@
+﻿{
+  "version": 1,
+  "good": "wheat",
+  "description": "Successive historical evidence anchors for P&P 1337 wheat. Append new entries and retrain; do not delete old IDs without a migration note. Units: kg dry matter / ha on suitable land (gross) unless noted.",
+  "method": {
+    "name": "hierarchical_soft_anchors_plus_feature_residual",
+    "stages": [
+      "Assemble PyAEZ targets with irrigation policy overrides from evidence",
+      "Apply global BAHS tech scale to positive-yield median",
+      "Soft-scale regional targets toward evidence medians (confidence-weighted, prior toward 1)",
+      "Train HistGradientBoosting on adjusted targets",
+      "Fit feature residual calibrator on evidence location log-scales; apply globally",
+      "Validate A* agronomic gates + E* evidence gates"
+    ],
+    "confidence_weights": {
+      "high": 0.75,
+      "medium": 0.55,
+      "low": 0.35
+    },
+    "prior_strength": 1.0,
+    "scale_clip": [0.25, 4.0]
+  },
+  "global_anchor": {
+    "id": "bahs_winchester_1283_1349",
+    "target_positive_median_kg_ha": 515.0,
+    "tolerance": 0.4,
+    "confidence": "high",
+    "source": "Pretty 1990 / BAHS Bishop of Winchester manors; gross wheat 515 kg/ha",
+    "url": "https://www.bahs.org.uk/AGHR/ARTICLES/38n1a1.pdf"
+  },
+  "evidence": [
+    {
+      "id": "britain_winchester_demesne",
+      "kind": "positive_median",
+      "eu5_regions": ["great_britain_region"],
+      "target_kg_ha": 515.0,
+      "tolerance": 0.35,
+      "confidence": "high",
+      "year_range": "1283-1349",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Pretty 1990 citing Titow; Winchester demesne gross wheat",
+      "url": "https://www.bahs.org.uk/AGHR/ARTICLES/38n1a1.pdf",
+      "notes": "National demesne mean; regional median may run lower due to uplands."
+    },
+    {
+      "id": "france_medieval_band",
+      "kind": "positive_median",
+      "eu5_regions": ["france_region"],
+      "target_kg_ha": 700.0,
+      "tolerance": 0.4,
+      "confidence": "medium",
+      "year_range": "1250-1400",
+      "irrigation_policy": "rainfed_priority",
+      "source": "English/NW European demesne band 470-1000; Flanders peaks excluded as regional median",
+      "url": "https://en.wikipedia.org/wiki/Agriculture_in_the_Middle_Ages",
+      "notes": "Flanders/Artois peaks 1500-2250 kg/ha are local ceilings, not France-region medians."
+    },
+    {
+      "id": "italy_malanima",
+      "kind": "positive_median",
+      "eu5_regions": ["italy_region"],
+      "target_kg_ha": 420.0,
+      "tolerance": 0.4,
+      "confidence": "medium",
+      "year_range": "1250-1350",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Federico & Malanima 2004 / Malanima seed-ratio estimates ~360-480 kg/ha",
+      "url": "https://web.stanford.edu/~avner/Greif_228_2005/Federico%20and%20Malanima%202004%20EHR%201000-2000.pdf"
+    },
+    {
+      "id": "iberia_seed_ratio",
+      "kind": "positive_median",
+      "eu5_regions": ["iberia_region"],
+      "target_kg_ha": 520.0,
+      "tolerance": 0.45,
+      "confidence": "low",
+      "year_range": "13th-16th c. synthesis",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Ceylan 2021 / Allen Mediterranean seed-ratio synthesis ~470-600 kg/ha",
+      "url": "https://www.bahs.org.uk/AGHR/ARTICLES/69_1_Ceylan.pdf"
+    },
+    {
+      "id": "north_german_seed_ratio",
+      "kind": "positive_median",
+      "eu5_regions": ["north_german_region", "south_german_region"],
+      "target_kg_ha": 450.0,
+      "tolerance": 0.45,
+      "confidence": "low",
+      "year_range": "early-central Middle Ages",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Slicher van Bath / Stamm seed-ratio ~1:4 → ~400-480 kg/ha",
+      "url": "https://edepot.wur.nl/296371"
+    },
+    {
+      "id": "carpathia_hungary_seed_ratio",
+      "kind": "positive_median",
+      "eu5_regions": ["carpathia_region"],
+      "target_kg_ha": 420.0,
+      "tolerance": 0.5,
+      "confidence": "low",
+      "year_range": "early 14th c.",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Szende & Laszlovszky 2017; seed ratio 1:3-1:4 → ~300-480 kg/ha",
+      "url": "http://epa.oszk.hu/02400/02460/00019/pdf/EPA02460_hungarian_historical_review_2017_01_138-179.pdf",
+      "notes": "Pulls prior over-high potential ceiling toward extensive open-field averages."
+    },
+    {
+      "id": "anatolia_ottoman_proxy",
+      "kind": "positive_median",
+      "eu5_regions": ["anatolia_region"],
+      "target_kg_ha": 650.0,
+      "tolerance": 0.45,
+      "confidence": "low",
+      "year_range": "15th-16th c. Ottoman proxy",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Ceylan 2021 Manisa reconstructions ~540-730 kg/ha arable; cropped higher",
+      "url": "https://www.bahs.org.uk/AGHR/ARTICLES/69_1_Ceylan.pdf"
+    },
+    {
+      "id": "north_china_song",
+      "kind": "positive_median",
+      "eu5_regions": ["north_china_region"],
+      "target_kg_ha": 650.0,
+      "tolerance": 0.4,
+      "confidence": "medium",
+      "year_range": "1000-1200",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Deng & O'Brien LSE WP178; Song ~1 shi/mu grain ≈500-770 kg/ha depending on mu conversion",
+      "url": "https://www.lse.ac.uk/asset-library/information/wp178.pdf"
+    },
+    {
+      "id": "south_china_winter_wheat",
+      "kind": "positive_median",
+      "eu5_regions": ["south_china_region"],
+      "target_kg_ha": 400.0,
+      "tolerance": 0.5,
+      "confidence": "medium",
+      "year_range": "1000-1200",
+      "irrigation_policy": "rainfed_priority",
+      "source": "LSE WP178 winter wheat after rice ~0.8 shi/mu; secondary to rice ecology",
+      "url": "https://www.lse.ac.uk/asset-library/information/wp178.pdf"
+    },
+    {
+      "id": "hindustan_indo_gangetic",
+      "kind": "positive_median",
+      "eu5_regions": ["hindustan_region"],
+      "target_kg_ha": 1100.0,
+      "tolerance": 0.45,
+      "confidence": "medium",
+      "year_range": "c. 1595 (Ain-i-Akbari; late-medieval plateau)",
+      "irrigation_policy": "prefer_irrigated",
+      "source": "Moosvi 1987 via Broadberry et al. 2014; ~1390 kg/ha wheat, ~2/3 irrigated",
+      "url": "https://doi.org/10.1016/j.eeh.2014.04.003",
+      "notes": "Post-1337 register; used as intensity ceiling for irrigated winter-wheat belt."
+    },
+    {
+      "id": "egypt_nile_mamluk",
+      "kind": "positive_median",
+      "eu5_regions": ["egypt_region"],
+      "target_kg_ha": 1090.0,
+      "tolerance": 0.45,
+      "confidence": "medium",
+      "year_range": "12th-14th c. Mamluk/Ayyubid",
+      "irrigation_policy": "prefer_irrigated",
+      "source": "Watson/Guichard cereal seed:harvest ~10:1; 10 ardabb/feddan ≈1090 kg/ha (69.6 kg ardabb, 0.6368 ha feddan)",
+      "url": "https://muslimheritage.com/agriculture-in-muslim-civilisation-a-green-revolution-in-pre-modern-times/",
+      "notes": "Critical irrigated corridor. Prefer irrigated PyAEZ over rainfed-zero desert cells."
+    },
+    {
+      "id": "crescent_irrigated_corridor",
+      "kind": "positive_median",
+      "eu5_regions": ["crescent_region"],
+      "target_kg_ha": 900.0,
+      "tolerance": 0.5,
+      "confidence": "low",
+      "year_range": "medieval Islamic irrigated grain belt",
+      "irrigation_policy": "prefer_irrigated",
+      "source": "Qualitative Abbasid Sawad / Fertile Crescent irrigated productivity; numeric sparse",
+      "url": "https://doi.org/10.1017/s0021088900000152",
+      "notes": "Soft irrigated-corridor generalization alongside Egypt."
+    },
+    {
+      "id": "maghreb_coastal_wheat",
+      "kind": "positive_median",
+      "eu5_regions": ["maghreb_region"],
+      "target_kg_ha": 550.0,
+      "tolerance": 0.5,
+      "confidence": "low",
+      "year_range": "12th-15th c.",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Qualitative Mediterranean exporter; no hard kg/ha — soft mid-European intensity",
+      "url": "https://doi.org/10.1093/oxfordhb/9780199987870.013.9"
+    },
+    {
+      "id": "bengal_rice_dominant",
+      "kind": "positive_median",
+      "eu5_regions": ["bengal_region"],
+      "target_kg_ha": 250.0,
+      "tolerance": 0.6,
+      "confidence": "medium",
+      "year_range": "medieval-Mughal",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Ain-i-Akbari: rice-dominant; wheat minor/occasional",
+      "url": "https://famineanddearth.exeter.ac.uk/displayhtml.html?id=fp_00129_en_ainiakbari_vol02"
+    },
+    {
+      "id": "indonesia_near_zero",
+      "kind": "near_zero",
+      "eu5_regions": ["indonesia_region", "indochina_region", "melanesia_region", "polynesia_region", "micronesia_region"],
+      "target_kg_ha": 0.0,
+      "max_mean_kg_ha": 40.0,
+      "tolerance": 0.0,
+      "confidence": "high",
+      "year_range": "14th-15th c.",
+      "irrigation_policy": "rainfed_priority",
+      "source": "No wheat cultivation attested; rice/sago staples",
+      "url": "https://doi.org/10.17977/um0330v3i2p146-156"
+    },
+    {
+      "id": "congo_near_zero",
+      "kind": "near_zero",
+      "eu5_regions": ["kongo_region", "central_africa_region", "guinea_region"],
+      "target_kg_ha": 0.0,
+      "max_mean_kg_ha": 40.0,
+      "tolerance": 0.0,
+      "confidence": "high",
+      "year_range": "14th-15th c.",
+      "irrigation_policy": "rainfed_priority",
+      "source": "Inner Congo archaeobotany: plantain/yam/millet staples; no wheat",
+      "url": "https://doi.org/10.1007/s00334-021-00865-8"
+    }
+  ]
+}

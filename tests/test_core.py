@@ -305,6 +305,40 @@ def test_pilot_layer_catalog_covers_plan() -> None:
     }
 
 
+def test_evidence_catalog_and_soft_scaling(tmp_path: Path) -> None:
+    from prosper_or_perish_static_modifiers.pnp_evidence import (
+        apply_evidence_target_scales,
+        load_evidence_catalog,
+    )
+
+    catalog = load_evidence_catalog()
+    assert catalog.good == "wheat"
+    assert catalog.global_anchor["target_positive_median_kg_ha"] == 515.0
+    ids = {e["id"] for e in catalog.evidence}
+    assert "egypt_nile_mamluk" in ids
+    assert "indonesia_near_zero" in ids
+
+    frame = pl.DataFrame(
+        {
+            "location_tag": ["a", "b", "c", "d", "e", "f"],
+            "region": [
+                "egypt_region",
+                "egypt_region",
+                "egypt_region",
+                "egypt_region",
+                "egypt_region",
+                "egypt_region",
+            ],
+            "target_yield_kg_ha": [50.0, 60.0, 70.0, 80.0, 90.0, 100.0],
+            "target_production_density_kg_ha": [25.0, 30.0, 35.0, 40.0, 45.0, 50.0],
+        }
+    )
+    out, meta = apply_evidence_target_scales(frame, catalog)
+    assert meta["n_touched"] == 6
+    assert float(out["target_yield_kg_ha"].mean()) > float(frame["target_yield_kg_ha"].mean())
+    assert "evidence_target_scale" in out.columns
+
+
 def test_suitability_class_and_pnp_publish(tmp_path: Path) -> None:
     from prosper_or_perish_static_modifiers.external_layers import PNP_LAYERS
     from prosper_or_perish_static_modifiers.pnp_model import suitability_class_from_fraction

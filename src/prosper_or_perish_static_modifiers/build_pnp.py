@@ -25,6 +25,7 @@ def build_pnp_wide(
         pyaez_yields_path=pyaez_yields_path,
         gaez_wide_path=gaez_wide_path,
         model_dir=model_dir,
+        geometry_path=geometry_path,
     )
     if require_validation and not report.passed:
         failed = [k for k, v in report.checks.items() if not v["passed"]]
