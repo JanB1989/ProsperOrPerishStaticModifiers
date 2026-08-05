@@ -1,0 +1,85 @@
+{
+  "feature_columns": [
+    "chelsa_annual_mean_temperature_target",
+    "chelsa_annual_precipitation_target",
+    "chelsa_precipitation_seasonality_target",
+    "calibrated_lat",
+    "calibrated_lon",
+    "abs_lat",
+    "aridity_proxy",
+    "temp_distance_from_optimum",
+    "severe_winter",
+    "soil_quality_ord",
+    "gaez_wheat_yield_km2",
+    "gaez_wheat_suitable_fraction",
+    "gaez_barley_yield_km2",
+    "gaez_rye_yield_km2",
+    "gaez_oats_yield_km2",
+    "topo_atoll",
+    "topo_flatland",
+    "topo_hills",
+    "topo_mountain_wasteland",
+    "topo_mountains",
+    "topo_plateau",
+    "topo_wetlands",
+    "veg_desert",
+    "veg_farmland",
+    "veg_forest",
+    "veg_grasslands",
+    "veg_jungle",
+    "veg_sparse",
+    "veg_woods",
+    "clim_arctic",
+    "clim_arid",
+    "clim_cold_arid",
+    "clim_continental",
+    "clim_mediterranean",
+    "clim_oceanic",
+    "clim_subtropical",
+    "clim_tropical"
+  ],
+  "tech_scale": 0.3236957888120679,
+  "bahs_wheat_gross_kg_ha": 515.0,
+  "cv_r2_yield": 0.9440610139535447,
+  "cv_r2_suitable_fraction": -0.008136903469282789,
+  "n_rows": 20929,
+  "validation_passed": true,
+  "validation_checks": {
+    "A1_arctic_near_zero": {
+      "passed": true,
+      "arctic_mean_kg_ha": 18.010125636408752,
+      "n": 1134
+    },
+    "A2_hyper_arid_low": {
+      "passed": true,
+      "arid_mean_kg_ha": 0.0,
+      "n": 763
+    },
+    "A3_tropical_below_temperate": {
+      "passed": true,
+      "tropical_mean_kg_ha": 24.311237022223377,
+      "temperate_mean_kg_ha": 532.9064036264616
+    },
+    "A4_nw_europe_high": {
+      "passed": true,
+      "nw_europe_mean_kg_ha": 572.0480927963667,
+      "n": 2420
+    },
+    "A5_bahs_median_band": {
+      "passed": true,
+      "positive_median_kg_ha": 454.9995498982729,
+      "target_kg_ha": 515.0
+    },
+    "A6_model_fit": {
+      "passed": true,
+      "cv_r2_yield": 0.9440610139535447
+    }
+  },
+  "validation_metrics": {
+    "tech_scale": 0.3236957888120679,
+    "cv_r2_yield": 0.9440610139535447,
+    "positive_median_kg_ha": 454.9995498982729,
+    "nw_europe_mean_kg_ha": 572.0480927963667,
+    "arctic_mean_kg_ha": 18.010125636408752
+  }
+}

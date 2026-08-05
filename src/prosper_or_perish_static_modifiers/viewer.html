@@ -163,7 +163,7 @@
     <p class="note">
       EU5 locations colored by FAO GAEZ v5 HP8100 (1981–2000) modern crop/soil physics.
       Default metric is production density (kg dry matter per km² of total cell area).
-      Dataset switch: GAEZ potential, Exploration layers, or EU5 Vanilla (population + development).
+      Dataset switch: GAEZ potential, Exploration layers, EU5 Vanilla, or P&amp;P (1337 technology goods).
       Density mapmodes use people or heads per km²; color scale is the 98th percentile of the active layer.
     </p>
   </header>
@@ -173,10 +173,14 @@
         <option value="gaez">GAEZ potential</option>
         <option value="exploration">Exploration layers</option>
         <option value="eu5">EU5 Vanilla</option>
+        <option value="pnp">P&amp;P</option>
       </select>
     </label>
     <label id="cropLabel">Crop
       <select id="crop"></select>
+    </label>
+    <label id="goodLabel" style="display:none">Good
+      <select id="good"></select>
     </label>
     <label id="waterLabel">Water mode
       <select id="water">
@@ -306,14 +310,20 @@
 
   function scaleValue(v, metricId) {
     // Suitability class: 1 best … 9 worst — invert so better lands on warmer colors.
-    if (metricId === "suitability_index") return 10 - v;
+    if (metricId === "suitability_index" || metricId === "pnp_wheat_suitability_class") {
+      return 10 - v;
+    }
     return v;
   }
 
   function formatValue(v, metricId) {
     if (!Number.isFinite(v)) return "—";
-    if (metricId === "suitable_fraction") return (v * 100).toFixed(1) + "%";
-    if (metricId === "suitability_index") return Math.round(v).toString();
+    if (metricId === "suitable_fraction" || metricId === "pnp_wheat_suitable_fraction") {
+      return (v * 100).toFixed(1) + "%";
+    }
+    if (metricId === "suitability_index" || metricId === "pnp_wheat_suitability_class") {
+      return Math.round(v).toString();
+    }
     if (metricId === "cycle_start") return "day " + Math.round(v);
     if (metricId === "cycle_length") return Math.round(v) + " d";
     if (metricId === "irrigation_need") return (v >= 10 ? v.toFixed(0) : v.toFixed(1)) + " mm";
@@ -330,6 +340,7 @@
     const meta = await (await fetch(META_URL)).json();
     const datasetSelect = document.getElementById("dataset");
     const cropSelect = document.getElementById("crop");
+    const goodSelect = document.getElementById("good");
     const waterSelect = document.getElementById("water");
     const metricSelect = document.getElementById("metric");
     const layerSelect = document.getElementById("layer");
@@ -398,33 +409,59 @@
 
     let explorationAttrs = null;
     let eu5Attrs = null;
+    let pnpAttrs = null;
     const hasExploration = !!(meta.exploration && meta.exploration.layers && meta.exploration.layers.length);
     const hasEu5 = !!(meta.eu5 && meta.eu5.layers && meta.eu5.layers.length);
+    const hasPnp = !!(meta.pnp && meta.pnp.layers && meta.pnp.layers.length);
     if (!hasExploration) {
       datasetSelect.querySelector('option[value="exploration"]').disabled = true;
     }
     if (!hasEu5) {
       datasetSelect.querySelector('option[value="eu5"]').disabled = true;
     }
+    if (!hasPnp) {
+      datasetSelect.querySelector('option[value="pnp"]').disabled = true;
+    }
 
     function datasetBundle(mode) {
       if (mode === "exploration") return meta.exploration;
       if (mode === "eu5") return meta.eu5;
+      if (mode === "pnp") return meta.pnp;
       return null;
     }
 
     function datasetAttrs(mode) {
       if (mode === "exploration") return explorationAttrs;
       if (mode === "eu5") return eu5Attrs;
+      if (mode === "pnp") return pnpAttrs;
       return null;
+    }
+
+    function rebuildGoodOptions() {
+      goodSelect.innerHTML = "";
+      const goods = (meta.pnp && meta.pnp.goods && meta.pnp.goods.length)
+        ? meta.pnp.goods
+        : ["wheat"];
+      for (const good of goods) {
+        const opt = document.createElement("option");
+        opt.value = good;
+        opt.textContent = good.charAt(0).toUpperCase() + good.slice(1);
+        goodSelect.appendChild(opt);
+      }
     }
 
     function rebuildLayerOptions(mode) {
       const bundle = datasetBundle(mode);
       layerSelect.innerHTML = "";
       if (!bundle) return;
+      const good = mode === "pnp" ? goodSelect.value : null;
       const groups = new Map();
+      let firstId = null;
       for (const layer of bundle.layers) {
+        if (good && layer.eu5_goods && layer.eu5_goods.length && !layer.eu5_goods.includes(good)) {
+          continue;
+        }
+        if (!firstId) firstId = layer.id;
         const groupName = layer.group || "Layers";
         if (!groups.has(groupName)) {
           const og = document.createElement("optgroup");
@@ -435,25 +472,35 @@
         const opt = document.createElement("option");
         opt.value = layer.id;
         opt.textContent = layer.label;
-        if (layer.id === bundle.default_layer) opt.selected = true;
+        const preferred = good
+          ? layer.id === `pnp_${good}_production_density`
+          : layer.id === bundle.default_layer;
+        if (preferred) opt.selected = true;
         groups.get(groupName).appendChild(opt);
       }
+      if (!layerSelect.value && firstId) layerSelect.value = firstId;
     }
 
     function isLayerDataset(mode) {
-      return (mode === "exploration" && hasExploration) || (mode === "eu5" && hasEu5);
+      return (mode === "exploration" && hasExploration)
+        || (mode === "eu5" && hasEu5)
+        || (mode === "pnp" && hasPnp);
     }
 
     function setDatasetMode(mode) {
       let active = mode;
       if (active === "exploration" && !hasExploration) active = "gaez";
       if (active === "eu5" && !hasEu5) active = "gaez";
+      if (active === "pnp" && !hasPnp) active = "gaez";
       datasetSelect.value = active;
       const layerMode = isLayerDataset(active);
+      const pnpMode = active === "pnp";
       document.getElementById("cropLabel").style.display = layerMode ? "none" : "";
       document.getElementById("waterLabel").style.display = layerMode ? "none" : "";
       document.getElementById("metricLabel").style.display = layerMode ? "none" : "";
+      document.getElementById("goodLabel").style.display = pnpMode ? "" : "none";
       document.getElementById("layerLabel").style.display = layerMode ? "" : "none";
+      if (pnpMode) rebuildGoodOptions();
       if (layerMode) rebuildLayerOptions(active);
     }
     setDatasetMode("gaez");
@@ -496,6 +543,17 @@
         throw new Error(
           `EU5 attribute pack size mismatch ` +
           `(got ${eu5Attrs.length}, expected ${n}×${meta.eu5.attribute_columns.length}=${n * meta.eu5.attribute_columns.length})`
+        );
+      }
+    }
+    if (hasPnp) {
+      status.textContent = "Loading P&P attributes…";
+      const pnpBytes = await loadGzip(assetUrl(meta.pnp.assets.attributes));
+      pnpAttrs = asTypedArray(Float32Array, pnpBytes);
+      if (pnpAttrs.length !== n * meta.pnp.attribute_columns.length) {
+        throw new Error(
+          `P&P attribute pack size mismatch ` +
+          `(got ${pnpAttrs.length}, expected ${n}×${meta.pnp.attribute_columns.length}=${n * meta.pnp.attribute_columns.length})`
         );
       }
     }
@@ -661,7 +719,9 @@
       if (isLayerDataset(mode)) {
         const bundle = datasetBundle(mode);
         const layer = bundle.layers.find(l => l.id === layerSelect.value);
-        const prefix = mode === "eu5" ? "EU5 Vanilla" : "Exploration";
+        const prefix = mode === "eu5" ? "EU5 Vanilla"
+          : mode === "pnp" ? `P&P · ${goodSelect.value || "wheat"}`
+          : "Exploration";
         statusBase = `${prefix} · ${layer ? layer.label : layerSelect.value}`;
       } else {
         const crop = cropSelect.value;
@@ -719,6 +779,7 @@
         : ` ${unit}`;
       const modeNote = mode === "exploration" ? "exploration"
         : mode === "eu5" ? "EU5 Vanilla"
+        : mode === "pnp" ? `P&P · ${goodSelect.value || "wheat"}`
         : waterSelect.value;
       tooltip.innerHTML = `<strong>${tag}</strong><br>${label}: ${formatValue(value, metricId)}${unitSuffix}<br>${modeNote}${pinNote}`;
     }
@@ -808,13 +869,15 @@
       const vmin = useRangeScale ? percentile(scaled, 0.02, true) : 0;
       document.getElementById("legendTitle").textContent = metric.label;
       document.getElementById("legendUnit").textContent = metric.unit;
-      if (metricId === "suitability_index") {
+      if (metricId === "suitability_index" || metricId === "pnp_wheat_suitability_class") {
         document.getElementById("legendMin").textContent = "9 worst";
         document.getElementById("legendMax").textContent = "1 best";
       } else {
         document.getElementById("legendMin").textContent = formatValue(vmin, metricId);
         document.getElementById("legendMax").textContent = formatValue(
-          metricId === "suitability_index" ? 10 - vmax : vmax,
+          (metricId === "suitability_index" || metricId === "pnp_wheat_suitability_class")
+            ? 10 - vmax
+            : vmax,
           metricId
         );
       }
@@ -1087,6 +1150,10 @@
       recolor();
     });
     layerSelect.addEventListener("change", recolor);
+    goodSelect.addEventListener("change", () => {
+      rebuildLayerOptions("pnp");
+      recolor();
+    });
     cropSelect.addEventListener("change", recolor);
     waterSelect.addEventListener("change", () => {
       rebuildMetricOptions();

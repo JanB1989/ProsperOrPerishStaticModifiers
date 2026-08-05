@@ -658,6 +658,13 @@
         "eu5_goods": []
       }
     ],
+    "goods": [
+      "cotton",
+      "livestock",
+      "maize",
+      "wheat",
+      "wool"
+    ],
     "assets": {
       "attributes": "data/exploration_attributes.9c2db8c616c9.bin.gz"
     }
@@ -695,8 +702,66 @@
         "eu5_goods": []
       }
     ],
+    "goods": [],
     "assets": {
       "attributes": "data/eu5_attributes.b553e807cbe4.bin.gz"
+    }
+  },
+  "pnp": {
+    "default_layer": "pnp_wheat_production_density",
+    "attribute_columns": [
+      "pnp_wheat_production_density",
+      "pnp_wheat_yield",
+      "pnp_wheat_suitable_fraction",
+      "pnp_wheat_suitability_class"
+    ],
+    "layers": [
+      {
+        "id": "pnp_wheat_production_density",
+        "label": "Production density",
+        "group": "Wheat (1337)",
+        "unit": "kg DM / km\u00b2",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "wheat"
+        ]
+      },
+      {
+        "id": "pnp_wheat_yield",
+        "label": "Yield",
+        "group": "Wheat (1337)",
+        "unit": "kg DM / suitable km\u00b2",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "wheat"
+        ]
+      },
+      {
+        "id": "pnp_wheat_suitable_fraction",
+        "label": "Suitable fraction",
+        "group": "Wheat (1337)",
+        "unit": "fraction",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "wheat"
+        ]
+      },
+      {
+        "id": "pnp_wheat_suitability_class",
+        "label": "Suitability class",
+        "group": "Wheat (1337)",
+        "unit": "class 1 best \u2192 9 worst",
+        "zero_is_missing": false,
+        "eu5_goods": [
+          "wheat"
+        ]
+      }
+    ],
+    "goods": [
+      "wheat"
+    ],
+    "assets": {
+      "attributes": "data/pnp_attributes.7ad8fba1879f.bin.gz"
     }
   }
 }

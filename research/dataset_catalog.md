@@ -1,4 +1,4 @@
-# Dataset catalog for EU5 location mapping
+﻿# Dataset catalog for EU5 location mapping
 
 Living inventory of global (or Old-World) datasets that can reuse the ProsperOrPerishStaticModifiers pattern:
 
@@ -61,6 +61,10 @@ Later these become **ML features** (biophysical potential / climate / soil) and 
 | `eu5_population_total` | Constructor `derived_food_balance_by_location` | people | EU5 Vanilla; `total_population` × 1000 |
 | `eu5_population_density` | Constructor pop / calibrated area | people/km² | Uses Constructor `area_jacobian_km2` |
 | `eu5_development` | Constructor `derived_food_balance_by_location` | development | Numeric game-start development score |
+| `pnp_wheat_production_density` | P&P 1337 wheat model | kg DM / km² | Technology-discounted ceiling |
+| `pnp_wheat_yield` | P&P 1337 wheat model | kg DM / suitable km² | BAHS-calibrated |
+| `pnp_wheat_suitable_fraction` | P&P 1337 wheat model | fraction | From supervised suitability model |
+| `pnp_wheat_suitability_class` | P&P 1337 wheat model | class 1–9 | Derived from suitable fraction |
 
 ---
 

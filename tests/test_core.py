@@ -288,6 +288,7 @@ def test_pilot_layer_catalog_covers_plan() -> None:
     from prosper_or_perish_static_modifiers.external_layers import (
         EU5_LAYERS,
         EXPLORATION_LAYERS,
+        PNP_LAYERS,
     )
 
     assert {layer.layer_id for layer in EU5_LAYERS} == {
@@ -296,3 +297,64 @@ def test_pilot_layer_catalog_covers_plan() -> None:
         "eu5_development",
     }
     assert all(layer.source != "eu5" for layer in EXPLORATION_LAYERS)
+    assert {layer.layer_id for layer in PNP_LAYERS} == {
+        "pnp_wheat_production_density",
+        "pnp_wheat_yield",
+        "pnp_wheat_suitable_fraction",
+        "pnp_wheat_suitability_class",
+    }
+
+
+def test_suitability_class_and_pnp_publish(tmp_path: Path) -> None:
+    from prosper_or_perish_static_modifiers.external_layers import PNP_LAYERS
+    from prosper_or_perish_static_modifiers.pnp_model import suitability_class_from_fraction
+
+    classes = suitability_class_from_fraction([1.0, 0.5, 0.0])
+    assert classes[0] == 1.0
+    assert classes[2] == 9.0
+    assert 4.0 <= classes[1] <= 6.0
+
+    tags = ["loc_a", "loc_b"]
+    data: dict[str, object] = {"location_tag": tags}
+    for water in ("rainfed", "irrigated"):
+        for metric in iter_metrics():
+            col = metric_column("wheat", water, metric["suffix"])
+            data[col] = [1.0, 0.0]
+    wide_path = tmp_path / "wide.parquet"
+    pl.DataFrame(data).write_parquet(wide_path)
+
+    pnp = {
+        "location_tag": tags,
+        "pnp_wheat_production_density": [1000.0, 0.0],
+        "pnp_wheat_yield": [2000.0, 0.0],
+        "pnp_wheat_suitable_fraction": [0.5, 0.0],
+        "pnp_wheat_suitability_class": [5.0, 9.0],
+    }
+    pnp_path = tmp_path / "pnp.parquet"
+    pl.DataFrame(pnp).write_parquet(pnp_path)
+
+    id_map_path = tmp_path / "location_id_map.bin.gz"
+    with gzip.open(id_map_path, "wb") as handle:
+        handle.write(np.array([1, 2], dtype=np.uint16).tobytes())
+    meta_path = tmp_path / "location_id_map.meta.json"
+    meta_path.write_text(json.dumps({"width": 2, "height": 1, "dtype": "uint16"}), encoding="utf-8")
+    order_path = tmp_path / "location_row_order.json"
+    order_path.write_text(json.dumps(tags), encoding="utf-8")
+
+    docs_dir = tmp_path / "docs"
+    publish_docs(
+        wide_path=wide_path,
+        location_id_map_path=id_map_path,
+        location_id_meta_path=meta_path,
+        location_row_order_path=order_path,
+        docs_dir=docs_dir,
+        crops=["wheat"],
+        pnp_wide_path=pnp_path,
+    )
+    meta = json.loads((docs_dir / "data" / "meta.json").read_text(encoding="utf-8"))
+    assert meta["pnp"] is not None
+    assert len(meta["pnp"]["layers"]) == len(PNP_LAYERS)
+    assert meta["pnp"]["goods"] == ["wheat"]
+    assert "pnp_wheat_yield" in meta["pnp"]["attribute_columns"]
+    assert any((docs_dir / "data").glob("pnp_attributes.*.bin.gz"))
+    assert "P&P" in (docs_dir / "index.html").read_text(encoding="utf-8")

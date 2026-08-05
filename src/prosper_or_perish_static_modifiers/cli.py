@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import http.server
@@ -8,6 +8,7 @@ import socketserver
 from prosper_or_perish_static_modifiers.config import load_config
 from prosper_or_perish_static_modifiers.crops import sha256_lock_count
 from prosper_or_perish_static_modifiers.build_external import build_external_wide
+from prosper_or_perish_static_modifiers.build_pnp import build_pnp_wide
 from prosper_or_perish_static_modifiers.fetch import fetch_gaez
 from prosper_or_perish_static_modifiers.fetch_external import fetch_external_pilots
 from prosper_or_perish_static_modifiers.geometry import (
@@ -151,10 +152,26 @@ def cmd_build_external(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_build_pnp(args: argparse.Namespace) -> int:
+    cfg = load_config(args.config)
+    path = build_pnp_wide(
+        candidates_path=cfg.location_candidates_path,
+        pyaez_yields_path=cfg.pyaez_yields_path,
+        gaez_wide_path=cfg.wide_path,
+        geometry_path=cfg.geometry_path,
+        output_path=cfg.pnp_wide_path,
+        model_dir=cfg.pnp_model_dir,
+        require_validation=not args.allow_failed_validation,
+    )
+    print(json.dumps({"pnp_wide": str(path), "model_dir": str(cfg.pnp_model_dir)}, indent=2))
+    return 0
+
+
 def cmd_publish(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
     order_path = cfg.artifacts_dir / "location_row_order.json"
     external_path = cfg.external_wide_path if cfg.external_wide_path.is_file() else None
+    pnp_path = cfg.pnp_wide_path if cfg.pnp_wide_path.is_file() else None
     index = publish_docs(
         wide_path=cfg.wide_path,
         location_id_map_path=cfg.location_id_map_path,
@@ -164,6 +181,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
         crops=cfg.crops or None,
         water_modes=tuple(cfg.water_modes),
         external_wide_path=external_path,
+        pnp_wide_path=pnp_path,
     )
     print(
         json.dumps(
@@ -171,6 +189,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
                 "index": str(index),
                 "exploration": external_path is not None,
                 "eu5": external_path is not None,
+                "pnp": pnp_path is not None,
             },
             indent=2,
         )
@@ -206,6 +225,9 @@ def cmd_info(args: argparse.Namespace) -> int:
                 "gaez_cache_dir": str(cfg.gaez_cache_dir),
                 "eu5_vanilla": str(cfg.eu5_vanilla_path),
                 "location_area": str(cfg.location_area_path),
+                "pyaez_yields": str(cfg.pyaez_yields_path),
+                "location_candidates": str(cfg.location_candidates_path),
+                "pnp_wide": str(cfg.pnp_wide_path),
                 "labels_long": str(cfg.labels_long) if cfg.labels_long else None,
                 "sha256_locks": sha256_lock_count(),
             },
@@ -256,6 +278,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_config_arg(external)
     external.set_defaults(func=cmd_build_external)
+
+    pnp = sub.add_parser(
+        "build-pnp",
+        help="Train 1337 P&P wheat model and emit location_pnp_wide.parquet",
+    )
+    _add_config_arg(pnp)
+    pnp.add_argument(
+        "--allow-failed-validation",
+        action="store_true",
+        help="Write outputs even if agronomic validation gates fail",
+    )
+    pnp.set_defaults(func=cmd_build_pnp)
 
     publish = sub.add_parser("publish", help="Write GitHub Pages assets under docs/")
     _add_config_arg(publish)

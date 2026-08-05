@@ -20,6 +20,7 @@ from prosper_or_perish_static_modifiers.crops import (
 from prosper_or_perish_static_modifiers.external_layers import (
     EU5_LAYERS,
     EXPLORATION_LAYERS,
+    PNP_LAYERS,
 )
 from prosper_or_perish_static_modifiers.geometry import LOCATION_TAG
 
@@ -40,6 +41,47 @@ def _finite_or_nan(values: list[float | None]) -> np.ndarray:
     return out
 
 
+def _pack_layers_from_frame(
+    *,
+    ordered: pl.DataFrame,
+    layers: tuple,
+    asset_stem: str,
+    data_dir: Path,
+) -> dict[str, object]:
+    columns = [layer.layer_id for layer in layers]
+    missing = [col for col in columns if col not in ordered.columns]
+    if missing:
+        raise ValueError(f"wide missing columns: {missing[:8]}")
+    packs = [
+        _finite_or_nan(ordered.get_column(column).to_list()) for column in columns
+    ]
+    attributes = np.concatenate(packs).astype(np.float32, copy=False)
+    digest = hashlib.sha256(attributes.tobytes()).hexdigest()[:12]
+    asset_name = f"{asset_stem}.{digest}.bin.gz"
+    path = data_dir / asset_name
+    with gzip.open(path, "wb") as handle:
+        handle.write(attributes.tobytes())
+    alias = data_dir / f"{asset_stem}.bin.gz"
+    alias.write_bytes(path.read_bytes())
+    return {
+        "default_layer": columns[0],
+        "attribute_columns": columns,
+        "layers": [
+            {
+                "id": layer.layer_id,
+                "label": layer.label,
+                "group": layer.group,
+                "unit": layer.unit,
+                "zero_is_missing": layer.zero_is_missing,
+                "eu5_goods": list(layer.eu5_goods),
+            }
+            for layer in layers
+        ],
+        "goods": sorted({g for layer in layers for g in layer.eu5_goods}),
+        "assets": {"attributes": f"data/{asset_name}"},
+    }
+
+
 def publish_docs(
     *,
     wide_path: Path,
@@ -50,6 +92,7 @@ def publish_docs(
     crops: list[str] | None = None,
     water_modes: list[str] | tuple[str, ...] = WATER_MODES,
     external_wide_path: Path | None = None,
+    pnp_wide_path: Path | None = None,
 ) -> Path:
     wide = pl.read_parquet(wide_path)
     order = json.loads(location_row_order_path.read_text(encoding="utf-8"))
@@ -97,52 +140,40 @@ def publish_docs(
 
     exploration = None
     eu5 = None
+    pnp = None
     if external_wide_path is not None and external_wide_path.is_file():
         external = pl.read_parquet(external_wide_path)
         ordered_ext = (
             pl.DataFrame({LOCATION_TAG: order})
             .join(external, on=LOCATION_TAG, how="left")
         )
-
-        def _pack_layers(layers: tuple, asset_stem: str) -> dict[str, object]:
-            columns = [layer.layer_id for layer in layers]
-            missing = [col for col in columns if col not in ordered_ext.columns]
-            if missing:
-                raise ValueError(f"external wide missing columns: {missing[:8]}")
-            packs = [
-                _finite_or_nan(ordered_ext.get_column(column).to_list())
-                for column in columns
-            ]
-            attributes = np.concatenate(packs).astype(np.float32, copy=False)
-            digest = hashlib.sha256(attributes.tobytes()).hexdigest()[:12]
-            asset_name = f"{asset_stem}.{digest}.bin.gz"
-            path = data_dir / asset_name
-            with gzip.open(path, "wb") as handle:
-                handle.write(attributes.tobytes())
-            # Keep a stable unversioned alias for local debugging; Pages uses the hashed URL.
-            alias = data_dir / f"{asset_stem}.bin.gz"
-            alias.write_bytes(path.read_bytes())
-            return {
-                "default_layer": columns[0],
-                "attribute_columns": columns,
-                "layers": [
-                    {
-                        "id": layer.layer_id,
-                        "label": layer.label,
-                        "group": layer.group,
-                        "unit": layer.unit,
-                        "zero_is_missing": layer.zero_is_missing,
-                        "eu5_goods": list(layer.eu5_goods),
-                    }
-                    for layer in layers
-                ],
-                "assets": {"attributes": f"data/{asset_name}"},
-            }
-
         if EXPLORATION_LAYERS:
-            exploration = _pack_layers(EXPLORATION_LAYERS, "exploration_attributes")
+            exploration = _pack_layers_from_frame(
+                ordered=ordered_ext,
+                layers=EXPLORATION_LAYERS,
+                asset_stem="exploration_attributes",
+                data_dir=data_dir,
+            )
         if EU5_LAYERS:
-            eu5 = _pack_layers(EU5_LAYERS, "eu5_attributes")
+            eu5 = _pack_layers_from_frame(
+                ordered=ordered_ext,
+                layers=EU5_LAYERS,
+                asset_stem="eu5_attributes",
+                data_dir=data_dir,
+            )
+
+    if pnp_wide_path is not None and pnp_wide_path.is_file() and PNP_LAYERS:
+        pnp_frame = pl.read_parquet(pnp_wide_path)
+        ordered_pnp = (
+            pl.DataFrame({LOCATION_TAG: order})
+            .join(pnp_frame, on=LOCATION_TAG, how="left")
+        )
+        pnp = _pack_layers_from_frame(
+            ordered=ordered_pnp,
+            layers=PNP_LAYERS,
+            asset_stem="pnp_attributes",
+            data_dir=data_dir,
+        )
 
     meta = {
         "title": "GAEZ Crop Mapmodes",
@@ -176,6 +207,7 @@ def publish_docs(
         "climate_scope": "GAEZ v5 RES05 HP8100 (1981-2000) modern diagnostic",
         "exploration": exploration,
         "eu5": eu5,
+        "pnp": pnp,
     }
     (data_dir / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     (docs_dir / "index.html").write_text(

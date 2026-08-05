@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,7 +12,7 @@ class ExternalLayerSpec:
     label: str
     group: str
     unit: str
-    source: str  # spam | glw | europe_suit | worldpop | hyde | eu5
+    source: str  # spam | glw | europe_suit | worldpop | hyde | eu5 | pnp
     zero_is_missing: bool = True
     # Source-specific fields
     spam_variable: str | None = None  # Y | H
@@ -211,6 +211,50 @@ EXPLORATION_LAYERS: tuple[ExternalLayerSpec, ...] = tuple(
 )
 EU5_LAYERS: tuple[ExternalLayerSpec, ...] = tuple(
     layer for layer in PILOT_LAYERS if layer.source == "eu5"
+)
+
+# Prosper-or-Perish 1337 reconstructed goods mapmodes (table-backed, model output).
+PNP_LAYERS: tuple[ExternalLayerSpec, ...] = (
+    ExternalLayerSpec(
+        layer_id="pnp_wheat_production_density",
+        label="Production density",
+        group="Wheat (1337)",
+        unit="kg DM / km²",
+        source="pnp",
+        table_column="pnp_wheat_production_density",
+        zero_is_missing=True,
+        eu5_goods=("wheat",),
+    ),
+    ExternalLayerSpec(
+        layer_id="pnp_wheat_yield",
+        label="Yield",
+        group="Wheat (1337)",
+        unit="kg DM / suitable km²",
+        source="pnp",
+        table_column="pnp_wheat_yield",
+        zero_is_missing=True,
+        eu5_goods=("wheat",),
+    ),
+    ExternalLayerSpec(
+        layer_id="pnp_wheat_suitable_fraction",
+        label="Suitable fraction",
+        group="Wheat (1337)",
+        unit="fraction",
+        source="pnp",
+        table_column="pnp_wheat_suitable_fraction",
+        zero_is_missing=True,
+        eu5_goods=("wheat",),
+    ),
+    ExternalLayerSpec(
+        layer_id="pnp_wheat_suitability_class",
+        label="Suitability class",
+        group="Wheat (1337)",
+        unit="class 1 best → 9 worst",
+        source="pnp",
+        table_column="pnp_wheat_suitability_class",
+        zero_is_missing=False,
+        eu5_goods=("wheat",),
+    ),
 )
 
 

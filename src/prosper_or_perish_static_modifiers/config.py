@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 import sys
@@ -6,6 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from prosper_or_perish_static_modifiers.eu5_population import DEFAULT_EU5_VANILLA_RELATIVE
+
+DEFAULT_PYAEZ_YIELDS_RELATIVE = (
+    "../ProsperOrPerishConstructor/artifacts/data/population_capacity/"
+    "pyaez_1337_yields.parquet"
+)
+DEFAULT_LOCATION_CANDIDATES_RELATIVE = (
+    "../ProsperOrPerishConstructor/artifacts/data/population_capacity/"
+    "current_capacity_map/location_candidates.parquet"
+)
 
 
 def repo_root() -> Path:
@@ -61,6 +70,8 @@ class ProjectConfig:
     external_cache_dir: Path
     location_area_path: Path
     eu5_vanilla_path: Path
+    pyaez_yields_path: Path
+    location_candidates_path: Path
     crops: list[str]
     water_modes: list[str]
     equator_y: int
@@ -88,6 +99,14 @@ class ProjectConfig:
     @property
     def external_wide_path(self) -> Path:
         return self.artifacts_dir / "location_external_wide.parquet"
+
+    @property
+    def pnp_wide_path(self) -> Path:
+        return self.artifacts_dir / "location_pnp_wide.parquet"
+
+    @property
+    def pnp_model_dir(self) -> Path:
+        return self.artifacts_dir / "pnp_models"
 
     @property
     def source_manifest_path(self) -> Path:
@@ -128,6 +147,8 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
         "geometry_land_contract_candidate_v1/location_geometry_candidate.parquet",
     )
     eu5_raw = paths.get("eu5_vanilla", DEFAULT_EU5_VANILLA_RELATIVE)
+    pyaez_raw = paths.get("pyaez_yields", DEFAULT_PYAEZ_YIELDS_RELATIVE)
+    candidates_raw = paths.get("location_candidates", DEFAULT_LOCATION_CANDIDATES_RELATIVE)
     return ProjectConfig(
         repo=repo,
         vanilla_root=vanilla_root,
@@ -142,6 +163,8 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
         external_cache_dir=resolve_path(external_raw, base=repo),
         location_area_path=resolve_path(area_raw, base=repo),
         eu5_vanilla_path=resolve_path(eu5_raw, base=repo),
+        pyaez_yields_path=resolve_path(pyaez_raw, base=repo),
+        location_candidates_path=resolve_path(candidates_raw, base=repo),
         crops=list(pipeline.get("crops") or []),
         water_modes=list(pipeline.get("water_modes") or ["rainfed", "irrigated"]),
         equator_y=int(pipeline.get("equator_y", 1024)),
