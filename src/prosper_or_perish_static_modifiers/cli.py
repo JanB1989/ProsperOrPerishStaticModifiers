@@ -7,7 +7,9 @@ import socketserver
 
 from prosper_or_perish_static_modifiers.config import load_config
 from prosper_or_perish_static_modifiers.crops import sha256_lock_count
+from prosper_or_perish_static_modifiers.build_external import build_external_wide
 from prosper_or_perish_static_modifiers.fetch import fetch_gaez
+from prosper_or_perish_static_modifiers.fetch_external import fetch_external_pilots
 from prosper_or_perish_static_modifiers.geometry import (
     build_location_geometry,
     build_location_id_map,
@@ -119,9 +121,38 @@ def cmd_build_wide(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_fetch_external(args: argparse.Namespace) -> int:
+    cfg = load_config(args.config)
+    manifest = fetch_external_pilots(cfg.external_cache_dir)
+    print(
+        json.dumps(
+            {
+                "layer_count": manifest["layer_count"],
+                "cache": str(cfg.external_cache_dir),
+                "manifest": str(cfg.external_cache_dir / "external_source_manifest.json"),
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
+def cmd_build_external(args: argparse.Namespace) -> int:
+    cfg = load_config(args.config)
+    path = build_external_wide(
+        sample_points_path=cfg.sample_points,
+        cache_dir=cfg.external_cache_dir,
+        geometry_path=cfg.geometry_path,
+        output_path=cfg.external_wide_path,
+    )
+    print(json.dumps({"external_wide": str(path)}, indent=2))
+    return 0
+
+
 def cmd_publish(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
     order_path = cfg.artifacts_dir / "location_row_order.json"
+    external_path = cfg.external_wide_path if cfg.external_wide_path.is_file() else None
     index = publish_docs(
         wide_path=cfg.wide_path,
         location_id_map_path=cfg.location_id_map_path,
@@ -130,8 +161,17 @@ def cmd_publish(args: argparse.Namespace) -> int:
         docs_dir=cfg.docs_dir,
         crops=cfg.crops or None,
         water_modes=tuple(cfg.water_modes),
+        external_wide_path=external_path,
     )
-    print(json.dumps({"index": str(index)}, indent=2))
+    print(
+        json.dumps(
+            {
+                "index": str(index),
+                "exploration": external_path is not None,
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
@@ -181,6 +221,13 @@ def build_parser() -> argparse.ArgumentParser:
     _add_config_arg(fetch)
     fetch.set_defaults(func=cmd_fetch_gaez)
 
+    fetch_ext = sub.add_parser(
+        "fetch-external",
+        help="Download MapSPAM / GLW4 / Europe-1500 pilot rasters",
+    )
+    _add_config_arg(fetch_ext)
+    fetch_ext.set_defaults(func=cmd_fetch_external)
+
     geom = sub.add_parser("build-geometry", help="Build location geometry + id map")
     _add_config_arg(geom)
     geom.set_defaults(func=cmd_build_geometry)
@@ -197,6 +244,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Pivot an existing long crop_mode_labels parquet (paths.labels_long)",
     )
     wide.set_defaults(func=cmd_build_wide)
+
+    external = sub.add_parser(
+        "build-external",
+        help="Sample pilot external rasters onto locations",
+    )
+    _add_config_arg(external)
+    external.set_defaults(func=cmd_build_external)
 
     publish = sub.add_parser("publish", help="Write GitHub Pages assets under docs/")
     _add_config_arg(publish)

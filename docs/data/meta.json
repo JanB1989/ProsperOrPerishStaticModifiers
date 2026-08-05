@@ -517,5 +517,113 @@
     "attributes": "data/attributes.bin.gz",
     "locations": "data/locations.json.gz"
   },
-  "climate_scope": "GAEZ v5 RES05 HP8100 (1981-2000) modern diagnostic"
+  "climate_scope": "GAEZ v5 RES05 HP8100 (1981-2000) modern diagnostic",
+  "exploration": {
+    "default_layer": "spam_wheat_rainfed_yield",
+    "attribute_columns": [
+      "spam_wheat_rainfed_yield",
+      "spam_maize_rainfed_yield",
+      "spam_cotton_rainfed_yield",
+      "spam_wheat_rainfed_harvested_area",
+      "spam_maize_rainfed_harvested_area",
+      "spam_cotton_rainfed_harvested_area",
+      "glw_cattle_density",
+      "glw_sheep_density",
+      "europe_ag_suitability_1500"
+    ],
+    "layers": [
+      {
+        "id": "spam_wheat_rainfed_yield",
+        "label": "Wheat yield (MapSPAM rainfed)",
+        "group": "MapSPAM observed",
+        "unit": "t/ha",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "wheat"
+        ]
+      },
+      {
+        "id": "spam_maize_rainfed_yield",
+        "label": "Maize yield (MapSPAM rainfed)",
+        "group": "MapSPAM observed",
+        "unit": "t/ha",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "maize"
+        ]
+      },
+      {
+        "id": "spam_cotton_rainfed_yield",
+        "label": "Cotton yield (MapSPAM rainfed)",
+        "group": "MapSPAM observed",
+        "unit": "t/ha",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "cotton"
+        ]
+      },
+      {
+        "id": "spam_wheat_rainfed_harvested_area",
+        "label": "Wheat harvested area (MapSPAM rainfed)",
+        "group": "MapSPAM observed",
+        "unit": "ha/cell",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "wheat"
+        ]
+      },
+      {
+        "id": "spam_maize_rainfed_harvested_area",
+        "label": "Maize harvested area (MapSPAM rainfed)",
+        "group": "MapSPAM observed",
+        "unit": "ha/cell",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "maize"
+        ]
+      },
+      {
+        "id": "spam_cotton_rainfed_harvested_area",
+        "label": "Cotton harvested area (MapSPAM rainfed)",
+        "group": "MapSPAM observed",
+        "unit": "ha/cell",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "cotton"
+        ]
+      },
+      {
+        "id": "glw_cattle_density",
+        "label": "Cattle density (GLW4)",
+        "group": "Livestock GLW",
+        "unit": "heads/km\u00b2",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "livestock"
+        ]
+      },
+      {
+        "id": "glw_sheep_density",
+        "label": "Sheep density (GLW4)",
+        "group": "Livestock GLW",
+        "unit": "heads/km\u00b2",
+        "zero_is_missing": true,
+        "eu5_goods": [
+          "livestock",
+          "wool"
+        ]
+      },
+      {
+        "id": "europe_ag_suitability_1500",
+        "label": "Europe ag suitability (1500)",
+        "group": "Historical Europe",
+        "unit": "index 0\u20131",
+        "zero_is_missing": true,
+        "eu5_goods": []
+      }
+    ],
+    "assets": {
+      "attributes": "data/exploration_attributes.bin.gz"
+    }
+  }
 }

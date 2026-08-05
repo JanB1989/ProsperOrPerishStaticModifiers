@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -163,21 +163,30 @@
     <p class="note">
       EU5 locations colored by FAO GAEZ v5 HP8100 (1981–2000) modern crop/soil physics.
       Default metric is production density (kg dry matter per total cell hectare).
-      Irrigation need and crop calendar only appear when water mode is Irrigated.
+      Dataset switch: GAEZ potential, or exploration layers (MapSPAM / GLW / Europe 1500).
     </p>
   </header>
   <div class="controls">
-    <label>Crop
+    <label>Dataset
+      <select id="dataset">
+        <option value="gaez">GAEZ potential</option>
+        <option value="exploration">Exploration layers</option>
+      </select>
+    </label>
+    <label id="cropLabel">Crop
       <select id="crop"></select>
     </label>
-    <label>Water mode
+    <label id="waterLabel">Water mode
       <select id="water">
         <option value="rainfed">Rain-fed</option>
         <option value="irrigated">Irrigated</option>
       </select>
     </label>
-    <label>Metric
+    <label id="metricLabel">Metric
       <select id="metric"></select>
+    </label>
+    <label id="layerLabel" style="display:none">Layer
+      <select id="layer"></select>
     </label>
     <label class="search-wrap">Find location
       <input id="search" type="search" placeholder="location_tag…" autocomplete="off" spellcheck="false">
@@ -306,9 +315,11 @@
   async function main() {
     const status = document.getElementById("status");
     const meta = await (await fetch(META_URL)).json();
+    const datasetSelect = document.getElementById("dataset");
     const cropSelect = document.getElementById("crop");
     const waterSelect = document.getElementById("water");
     const metricSelect = document.getElementById("metric");
+    const layerSelect = document.getElementById("layer");
     const searchInput = document.getElementById("search");
     const searchResults = document.getElementById("searchResults");
     const mapWrap = document.getElementById("mapWrap");
@@ -372,7 +383,40 @@
 
     rebuildMetricOptions(meta.default_metric);
 
+    let explorationAttrs = null;
+    const hasExploration = !!(meta.exploration && meta.exploration.layers && meta.exploration.layers.length);
+    if (!hasExploration) {
+      datasetSelect.querySelector('option[value="exploration"]').disabled = true;
+    } else {
+      const groups = new Map();
+      for (const layer of meta.exploration.layers) {
+        const groupName = layer.group || "Exploration";
+        if (!groups.has(groupName)) {
+          const og = document.createElement("optgroup");
+          og.label = groupName;
+          groups.set(groupName, og);
+          layerSelect.appendChild(og);
+        }
+        const opt = document.createElement("option");
+        opt.value = layer.id;
+        opt.textContent = layer.label;
+        if (layer.id === meta.exploration.default_layer) opt.selected = true;
+        groups.get(groupName).appendChild(opt);
+      }
+    }
+
+    function setDatasetMode(mode) {
+      const exploration = mode === "exploration" && hasExploration;
+      document.getElementById("cropLabel").style.display = exploration ? "none" : "";
+      document.getElementById("waterLabel").style.display = exploration ? "none" : "";
+      document.getElementById("metricLabel").style.display = exploration ? "none" : "";
+      document.getElementById("layerLabel").style.display = exploration ? "" : "none";
+      if (!exploration) datasetSelect.value = "gaez";
+    }
+    setDatasetMode("gaez");
+
     status.textContent = "Loading location id map…";
+
     const idBytes = await loadGzip(meta.assets.location_id_map);
     const idMap = asTypedArray(Uint16Array, idBytes);
     const mapW = meta.map.width;
@@ -392,6 +436,14 @@
     const columns = meta.attribute_columns;
     if (attributes.length !== n * columns.length) {
       throw new Error("attribute pack size mismatch");
+    }
+    if (hasExploration) {
+      status.textContent = "Loading exploration attributes…";
+      const expBytes = await loadGzip(meta.exploration.assets.attributes);
+      explorationAttrs = asTypedArray(Float32Array, expBytes);
+      if (explorationAttrs.length !== n * meta.exploration.attribute_columns.length) {
+        throw new Error("exploration attribute pack size mismatch");
+      }
     }
 
     // One representative pixel per location for fly-to / highlight,
@@ -551,11 +603,16 @@
     }
 
     function updateStatus() {
+      if (datasetSelect.value === "exploration" && hasExploration) {
+        const layer = meta.exploration.layers.find(l => l.id === layerSelect.value);
+        statusBase = `Exploration · ${layer ? layer.label : layerSelect.value}`;
+      } else {
       const crop = cropSelect.value;
       const water = waterSelect.value;
       const metricId = metricSelect.value;
       const metric = meta.metrics.find(m => m.id === metricId);
       statusBase = `${meta.crops.find(c => c.id === crop).label} · ${water} · ${metric.label}`;
+      }
       if (pinnedId) {
         status.textContent = `${statusBase} · Pinned: ${locations[pinnedId - 1]}`;
       } else {
@@ -568,13 +625,25 @@
         if (!pinnedId) tooltip.style.display = "none";
         return;
       }
-      const crop = cropSelect.value;
-      const water = waterSelect.value;
-      const metricId = metricSelect.value;
-      const metric = meta.metrics.find(m => m.id === metricId);
-      const colIdx = columnIndex(crop, water, metricId);
       const tag = locations[id - 1];
-      const value = valueAt(id, colIdx);
+      let label, unit, value, metricId;
+      if (datasetSelect.value === "exploration" && hasExploration) {
+        const layer = meta.exploration.layers.find(l => l.id === layerSelect.value);
+        const colIdx = meta.exploration.attribute_columns.indexOf(layerSelect.value);
+        label = layer.label;
+        unit = layer.unit;
+        metricId = layer.id;
+        value = explorationAttrs[colIdx * n + (id - 1)];
+      } else {
+        const crop = cropSelect.value;
+        const water = waterSelect.value;
+        metricId = metricSelect.value;
+        const metric = meta.metrics.find(m => m.id === metricId);
+        const colIdx = columnIndex(crop, water, metricId);
+        label = metric.label;
+        unit = metric.unit;
+        value = valueAt(id, colIdx);
+      }
       tooltip.style.display = "block";
       tooltip.classList.toggle("pinned", !!pinned);
       const { w, h } = cssSize();
@@ -587,8 +656,9 @@
       const pinNote = pinned ? "<br><em>Pinned · Esc to clear</em>" : "";
       const unitSuffix = (metricId === "irrigation_need" || metricId === "cycle_length" || metricId === "cycle_start" || metricId === "suitable_fraction")
         ? ""
-        : ` ${metric.unit}`;
-      tooltip.innerHTML = `<strong>${tag}</strong><br>${metric.label}: ${formatValue(value, metricId)}${unitSuffix}<br>${water}${pinNote}`;
+        : ` ${unit}`;
+      const waterNote = (datasetSelect.value === "exploration") ? "exploration" : waterSelect.value;
+      tooltip.innerHTML = `<strong>${tag}</strong><br>${label}: ${formatValue(value, metricId)}${unitSuffix}<br>${waterNote}${pinNote}`;
     }
 
     function drawHighlight(id, color) {
@@ -645,12 +715,21 @@
     }
 
     function recolor() {
+      let metricId, metric, slice;
+      if (datasetSelect.value === "exploration" && hasExploration) {
+        const layer = meta.exploration.layers.find(l => l.id === layerSelect.value);
+        metricId = layer.id;
+        metric = layer;
+        const colIdx = meta.exploration.attribute_columns.indexOf(layerSelect.value);
+        slice = explorationAttrs.subarray(colIdx * n, (colIdx + 1) * n);
+      } else {
       const crop = cropSelect.value;
       const water = waterSelect.value;
-      const metricId = metricSelect.value;
-      const metric = meta.metrics.find(m => m.id === metricId);
+      metricId = metricSelect.value;
+      metric = meta.metrics.find(m => m.id === metricId);
       const colIdx = columnIndex(crop, water, metricId);
-      const slice = attributes.subarray(colIdx * n, (colIdx + 1) * n);
+      slice = attributes.subarray(colIdx * n, (colIdx + 1) * n);
+      }
       const includeZero = metric.zero_is_missing === false;
       const scaled = new Float32Array(slice.length);
       for (let i = 0; i < slice.length; i++) {
@@ -680,7 +759,7 @@
           pixels[o] = 11; pixels[o + 1] = 18; pixels[o + 2] = 32; pixels[o + 3] = 255;
           continue;
         }
-        const v = valueAt(id, colIdx);
+        const v = slice[id - 1];
         if (isMissingValue(v, metric)) {
           pixels[o] = 55; pixels[o + 1] = 65; pixels[o + 2] = 78; pixels[o + 3] = 255;
           continue;
@@ -932,6 +1011,11 @@
       }
     });
 
+    datasetSelect.addEventListener("change", () => {
+      setDatasetMode(datasetSelect.value);
+      recolor();
+    });
+    layerSelect.addEventListener("change", recolor);
     cropSelect.addEventListener("change", recolor);
     waterSelect.addEventListener("change", () => {
       rebuildMetricOptions();

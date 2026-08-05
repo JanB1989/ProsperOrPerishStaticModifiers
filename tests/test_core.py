@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import gzip
 import json
@@ -115,4 +115,63 @@ def test_publish_pack_round_trip(tmp_path: Path) -> None:
         attrs = np.frombuffer(handle.read(), dtype=np.float32)
     assert attrs.shape[0] == 2 * len(meta["attribute_columns"])
     assert (docs_dir / "index.html").is_file()
+
+
+def test_publish_exploration_pack(tmp_path: Path) -> None:
+    from prosper_or_perish_static_modifiers.external_layers import PILOT_LAYERS
+
+    tags = ["loc_a", "loc_b"]
+    data: dict[str, object] = {"location_tag": tags}
+    for water in ("rainfed", "irrigated"):
+        for metric in iter_metrics():
+            col = metric_column("wheat", water, metric["suffix"])
+            data[col] = [1.0, 0.0]
+    wide_path = tmp_path / "wide.parquet"
+    pl.DataFrame(data).write_parquet(wide_path)
+
+    ext = {"location_tag": tags}
+    for layer in PILOT_LAYERS:
+        ext[layer.layer_id] = [2.0, 0.5]
+    ext_path = tmp_path / "external.parquet"
+    pl.DataFrame(ext).write_parquet(ext_path)
+
+    id_map_path = tmp_path / "location_id_map.bin.gz"
+    with gzip.open(id_map_path, "wb") as handle:
+        handle.write(np.array([1, 2], dtype=np.uint16).tobytes())
+    meta_path = tmp_path / "location_id_map.meta.json"
+    meta_path.write_text(json.dumps({"width": 2, "height": 1, "dtype": "uint16"}), encoding="utf-8")
+    order_path = tmp_path / "location_row_order.json"
+    order_path.write_text(json.dumps(tags), encoding="utf-8")
+
+    docs_dir = tmp_path / "docs"
+    publish_docs(
+        wide_path=wide_path,
+        location_id_map_path=id_map_path,
+        location_id_meta_path=meta_path,
+        location_row_order_path=order_path,
+        docs_dir=docs_dir,
+        crops=["wheat"],
+        external_wide_path=ext_path,
+    )
+    meta = json.loads((docs_dir / "data" / "meta.json").read_text(encoding="utf-8"))
+    assert meta["exploration"] is not None
+    assert len(meta["exploration"]["layers"]) == len(PILOT_LAYERS)
+    assert (docs_dir / "data" / "exploration_attributes.bin.gz").is_file()
+    assert "spam_cotton_rainfed_yield" in meta["exploration"]["attribute_columns"]
+    assert "glw_cattle_density" in meta["exploration"]["attribute_columns"]
+    assert "europe_ag_suitability_1500" in meta["exploration"]["attribute_columns"]
+
+
+def test_pilot_layer_catalog_covers_plan() -> None:
+    from prosper_or_perish_static_modifiers.external_layers import PILOT_LAYERS
+
+    ids = {layer.layer_id for layer in PILOT_LAYERS}
+    assert "spam_wheat_rainfed_yield" in ids
+    assert "spam_maize_rainfed_yield" in ids
+    assert "spam_cotton_rainfed_yield" in ids
+    assert "glw_cattle_density" in ids
+    assert "glw_sheep_density" in ids
+    assert "europe_ag_suitability_1500" in ids
+    groups = {layer.group for layer in PILOT_LAYERS}
+    assert groups == {"MapSPAM observed", "Livestock GLW", "Historical Europe"}
 

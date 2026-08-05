@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
@@ -30,6 +30,7 @@ def sample_raster_at_footprint_points(
     source_path: Path,
     *,
     value_column: str,
+    band_index: int = 1,
 ) -> pl.DataFrame:
     import rasterio
     from rasterio.transform import rowcol
@@ -45,8 +46,10 @@ def sample_raster_at_footprint_points(
     longitude = points["lookup_lon"].to_list()
     latitude = points["lookup_lat"].to_list()
     with rasterio.open(source_path) as dataset:
-        if dataset.count != 1:
-            raise ValueError(f"expected single-band raster, found {dataset.count}")
+        if band_index < 1 or band_index > dataset.count:
+            raise ValueError(
+                f"band {band_index} out of range for {source_path} (count={dataset.count})"
+            )
         if dataset.crs is None:
             raise ValueError(f"raster has no CRS: {source_path}")
         if dataset.crs.to_epsg() != 4326:
@@ -61,7 +64,7 @@ def sample_raster_at_footprint_points(
             & (columns < dataset.width)
         )
         values = np.full(points.height, np.nan, dtype=np.float64)
-        band = dataset.read(1, masked=True).astype(np.float64).filled(np.nan)
+        band = dataset.read(band_index, masked=True).astype(np.float64).filled(np.nan)
         values[in_bounds] = band[rows[in_bounds], columns[in_bounds]]
     return points.select(LOCATION_TAG, "sample_index").with_columns(
         pl.Series(value_column, values, dtype=pl.Float64).fill_nan(None)

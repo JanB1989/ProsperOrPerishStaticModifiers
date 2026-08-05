@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import gzip
 import json
@@ -15,11 +15,12 @@ from prosper_or_perish_static_modifiers.crops import (
     metric_column,
     selected_crops,
 )
+from prosper_or_perish_static_modifiers.external_layers import PILOT_LAYERS
 from prosper_or_perish_static_modifiers.geometry import LOCATION_TAG
+
 
 def load_viewer_html() -> str:
     return (Path(__file__).with_name("viewer.html")).read_text(encoding="utf-8")
-
 
 
 def _finite_or_nan(values: list[float | None]) -> np.ndarray:
@@ -41,6 +42,7 @@ def publish_docs(
     docs_dir: Path,
     crops: list[str] | None = None,
     water_modes: list[str] | tuple[str, ...] = WATER_MODES,
+    external_wide_path: Path | None = None,
 ) -> Path:
     wide = pl.read_parquet(wide_path)
     order = json.loads(location_row_order_path.read_text(encoding="utf-8"))
@@ -86,6 +88,42 @@ def publish_docs(
     docs_id_map = assets_dir / "location_id_map.bin.gz"
     docs_id_map.write_bytes(location_id_map_path.read_bytes())
 
+    exploration = None
+    if external_wide_path is not None and external_wide_path.is_file():
+        external = pl.read_parquet(external_wide_path)
+        ordered_ext = (
+            pl.DataFrame({LOCATION_TAG: order})
+            .join(external, on=LOCATION_TAG, how="left")
+        )
+        ext_columns = [layer.layer_id for layer in PILOT_LAYERS]
+        missing_ext = [col for col in ext_columns if col not in ordered_ext.columns]
+        if missing_ext:
+            raise ValueError(f"external wide missing columns: {missing_ext[:8]}")
+        ext_packs = [
+            _finite_or_nan(ordered_ext.get_column(column).to_list())
+            for column in ext_columns
+        ]
+        ext_attributes = np.concatenate(ext_packs).astype(np.float32, copy=False)
+        ext_path = data_dir / "exploration_attributes.bin.gz"
+        with gzip.open(ext_path, "wb") as handle:
+            handle.write(ext_attributes.tobytes())
+        exploration = {
+            "default_layer": ext_columns[0],
+            "attribute_columns": ext_columns,
+            "layers": [
+                {
+                    "id": layer.layer_id,
+                    "label": layer.label,
+                    "group": layer.group,
+                    "unit": layer.unit,
+                    "zero_is_missing": layer.zero_is_missing,
+                    "eu5_goods": list(layer.eu5_goods),
+                }
+                for layer in PILOT_LAYERS
+            ],
+            "assets": {"attributes": "data/exploration_attributes.bin.gz"},
+        }
+
     meta = {
         "title": "GAEZ Crop Mapmodes",
         "default_metric": DEFAULT_METRIC,
@@ -116,6 +154,7 @@ def publish_docs(
             "locations": "data/locations.json.gz",
         },
         "climate_scope": "GAEZ v5 RES05 HP8100 (1981-2000) modern diagnostic",
+        "exploration": exploration,
     }
     (data_dir / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     (docs_dir / "index.html").write_text(load_viewer_html(), encoding="utf-8")

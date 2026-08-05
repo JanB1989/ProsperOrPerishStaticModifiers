@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 import sys
@@ -56,6 +56,7 @@ class ProjectConfig:
     docs_dir: Path
     labels_long: Path | None
     crop_samples_dir: Path | None
+    external_cache_dir: Path
     crops: list[str]
     water_modes: list[str]
     equator_y: int
@@ -79,6 +80,10 @@ class ProjectConfig:
     @property
     def wide_path(self) -> Path:
         return self.artifacts_dir / "location_gaez_wide.parquet"
+
+    @property
+    def external_wide_path(self) -> Path:
+        return self.artifacts_dir / "location_external_wide.parquet"
 
     @property
     def source_manifest_path(self) -> Path:
@@ -112,6 +117,7 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
     )
     labels_raw = paths.get("labels_long")
     samples_raw = paths.get("crop_samples_dir")
+    external_raw = paths.get("external_cache_dir", "artifacts/external_cache")
     return ProjectConfig(
         repo=repo,
         vanilla_root=vanilla_root,
@@ -123,6 +129,7 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
         docs_dir=resolve_path(paths.get("docs_dir", "docs"), base=repo),
         labels_long=resolve_path(labels_raw, base=repo) if labels_raw else None,
         crop_samples_dir=resolve_path(samples_raw, base=repo) if samples_raw else None,
+        external_cache_dir=resolve_path(external_raw, base=repo),
         crops=list(pipeline.get("crops") or []),
         water_modes=list(pipeline.get("water_modes") or ["rainfed", "irrigated"]),
         equator_y=int(pipeline.get("equator_y", 1024)),
