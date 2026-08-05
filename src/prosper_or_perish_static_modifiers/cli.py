@@ -158,6 +158,7 @@ def cmd_build_pnp(args: argparse.Namespace) -> int:
         cfg.repo
         / "../ProsperOrPerishConstructor/artifacts/data/population_capacity/crop_mode_labels.parquet"
     ).resolve()
+    evidence = (cfg.repo / "research" / "pnp_wheat_evidence.json").resolve()
     path = build_pnp_wide(
         candidates_path=cfg.location_candidates_path,
         pyaez_yields_path=cfg.pyaez_yields_path,
@@ -168,6 +169,7 @@ def cmd_build_pnp(args: argparse.Namespace) -> int:
         require_validation=not args.allow_failed_validation,
         external_wide_path=cfg.external_wide_path if cfg.external_wide_path.is_file() else None,
         crop_mode_labels_path=crop_labels if crop_labels.is_file() else None,
+        evidence_path=evidence if evidence.is_file() else None,
     )
     print(json.dumps({"pnp_wide": str(path), "model_dir": str(cfg.pnp_model_dir)}, indent=2))
     return 0

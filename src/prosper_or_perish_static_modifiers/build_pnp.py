@@ -19,6 +19,7 @@ def build_pnp_wide(
     require_validation: bool = True,
     external_wide_path: Path | None = None,
     crop_mode_labels_path: Path | None = None,
+    evidence_path: Path | None = None,
 ) -> Path:
     """Train the 1337 wheat model and emit one wide row per location."""
 
@@ -30,13 +31,19 @@ def build_pnp_wide(
         geometry_path=geometry_path,
         external_wide_path=external_wide_path,
         crop_mode_labels_path=crop_mode_labels_path,
+        evidence_path=evidence_path,
     )
     if require_validation and not report.passed:
-        failed = [k for k, v in report.checks.items() if not v["passed"]]
+        failed_phys = [k for k, v in report.checks.items() if not v["passed"]]
+        failed_assump = [
+            k
+            for k, v in (report.assumption_tests or {}).items()
+            if not v["passed"]
+        ]
         raise RuntimeError(
             "P&P wheat validation gate failed: "
-            + ", ".join(failed)
-            + f" details={report.checks}"
+            + f"physical={failed_phys} assumptions={failed_assump}"
+            + f" details_phys={report.checks} details_assump={report.assumption_tests}"
         )
 
     geometry = pl.read_parquet(geometry_path)

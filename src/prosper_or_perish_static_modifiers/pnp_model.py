@@ -22,6 +22,11 @@ from prosper_or_perish_static_modifiers.pnp_historic import (
     load_bahs_wheat_kg_ha,
     write_label_audit,
 )
+from prosper_or_perish_static_modifiers.pnp_evidence import (
+    default_evidence_path,
+    load_evidence_catalog,
+    match_mask,
+)
 
 CANDIDATE_NUMERIC: tuple[str, ...] = (
     "chelsa_annual_mean_temperature",
@@ -326,13 +331,104 @@ def _gaez_phys_raw_frame(feature_frame: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def _evidence_absolute_hard_rows(
+    feature_frame: pl.DataFrame,
+    phys: pl.DataFrame,
+    *,
+    evidence_path: Path | None = None,
+    include_holdout: bool = True,
+) -> tuple[pl.DataFrame, dict]:
+    """Map sourced absolute historic kg/ha (worldwide) onto matched locations.
+
+    Within each evidence stratum, reshape GAEZ phys_raw so the stratum median
+    equals the published absolute target — keeps continuity, sets intensity from
+    history (Nile, Indo-Gangetic, Maghreb, N. China, …), not England alone.
+    """
+
+    catalog = load_evidence_catalog(evidence_path or default_evidence_path())
+    joined = feature_frame.join(phys, on=LOCATION_TAG, how="left")
+    rows: list[pl.DataFrame] = []
+    recipe_meta: list[dict] = []
+
+    recipes = [
+        e
+        for e in catalog.evidence
+        if str(e.get("kind")) in {"yield_intensity", "near_zero"}
+        and (include_holdout or not e.get("holdout"))
+    ]
+    # Higher weight last so it can overwrite overlaps when we unique later.
+    recipes = sorted(recipes, key=lambda e: float(e.get("weight", 1.0)))
+
+    for entry in recipes:
+        mask = match_mask(joined, entry.get("match"))
+        n_match = int(mask.sum())
+        if n_match == 0:
+            recipe_meta.append({"id": entry.get("id"), "n_match": 0, "skipped": "no_match"})
+            continue
+        target = float(entry.get("target_kg_ha", 0.0))
+        kind = str(entry.get("kind"))
+        weight = float(entry.get("weight", catalog.history_base_weight)) * 10.0
+        sub = joined.filter(pl.Series(mask)).select(LOCATION_TAG, "phys_raw")
+        if kind == "near_zero":
+            labeled = sub.with_columns(
+                pl.lit(0.0).alias("label_yield_kg_ha"),
+                pl.lit(weight).alias("sample_weight_yield"),
+                pl.lit(f"evidence:{entry.get('id')}").alias("label_source"),
+            )
+        else:
+            pos = sub.filter(pl.col("phys_raw") > 0)
+            med = float(pos["phys_raw"].median()) if pos.height else 0.0
+            if med <= 0:
+                # No GAEZ signal — flat absolute anchor.
+                labeled = sub.with_columns(
+                    pl.lit(target).alias("label_yield_kg_ha"),
+                    pl.lit(weight).alias("sample_weight_yield"),
+                    pl.lit(f"evidence:{entry.get('id')}").alias("label_source"),
+                )
+            else:
+                labeled = sub.with_columns(
+                    (pl.col("phys_raw") * (target / med))
+                    .clip(0.0, target * 2.5)
+                    .alias("label_yield_kg_ha"),
+                    pl.lit(weight).alias("sample_weight_yield"),
+                    pl.lit(f"evidence:{entry.get('id')}").alias("label_source"),
+                )
+        rows.append(labeled)
+        recipe_meta.append(
+            {
+                "id": entry.get("id"),
+                "kind": kind,
+                "n_match": n_match,
+                "target_kg_ha": target,
+                "weight": weight,
+                "holdout": bool(entry.get("holdout")),
+                "source": entry.get("source"),
+            }
+        )
+
+    if not rows:
+        empty = pl.DataFrame(
+            schema={
+                LOCATION_TAG: pl.Utf8,
+                "label_yield_kg_ha": pl.Float64,
+                "sample_weight_yield": pl.Float64,
+                "label_source": pl.Utf8,
+            }
+        )
+        return empty, {"n_evidence_rows": 0, "evidence_recipes": recipe_meta}
+
+    out = pl.concat(rows, how="diagonal").unique(subset=[LOCATION_TAG], keep="last")
+    return out, {"n_evidence_rows": int(out.height), "evidence_recipes": recipe_meta}
+
+
 def build_training_table(
     feature_frame: pl.DataFrame,
     *,
     geometry_path: Path,
     observations_path: Path | None = None,
+    evidence_path: Path | None = None,
 ) -> tuple[pl.DataFrame, pl.DataFrame, dict]:
-    """Observation-level historic rows + hostile zeros, joined to attributes."""
+    """BAHS + worldwide absolute evidence anchors + hostile zeros + GAEZ soft shape."""
 
     paths = default_historic_paths()
     obs_path = observations_path or paths.bahs_observations
@@ -387,10 +483,14 @@ def build_training_table(
         zeros = zeros.sample(n=2500, seed=1337)
     zeros = zeros.with_columns(pl.lit(0.25).alias("sample_weight_yield"))
 
-    # Soft global prior: GAEZ low-input wheat shape (irrigated allowed where river),
-    # scaled so median on BAHS locations matches historic median. PyAEZ is feature-only.
-    bahs_tags = historic_rows[LOCATION_TAG].unique()
     phys = _gaez_phys_raw_frame(feature_frame)
+    evidence_rows, evidence_meta = _evidence_absolute_hard_rows(
+        feature_frame, phys, evidence_path=evidence_path, include_holdout=True
+    )
+
+    # Soft global prior: GAEZ shape scaled to BAHS median on BAHS sites.
+    # Drop locations already covered by hard evidence/zeros (BAHS can coexist).
+    bahs_tags = historic_rows[LOCATION_TAG].unique()
     phys_on_bahs = phys.join(bahs_tags.to_frame(LOCATION_TAG), on=LOCATION_TAG, how="inner")
     phys_med = float(phys_on_bahs.filter(pl.col("phys_raw") > 0)["phys_raw"].median() or 1.0)
     hist_med = float(bahs["yield_kg_ha"].median())
@@ -403,11 +503,18 @@ def build_training_table(
         )
         .filter(pl.col("label_yield_kg_ha") > 0)
         .join(zeros.select(LOCATION_TAG), on=LOCATION_TAG, how="anti")
+        .join(evidence_rows.select(LOCATION_TAG), on=LOCATION_TAG, how="anti")
     )
 
     train = pl.concat(
         [
             historic_rows.select(
+                LOCATION_TAG,
+                "label_yield_kg_ha",
+                "sample_weight_yield",
+                "label_source",
+            ),
+            evidence_rows.select(
                 LOCATION_TAG,
                 "label_yield_kg_ha",
                 "sample_weight_yield",
@@ -451,9 +558,16 @@ def build_training_table(
         .otherwise(rain_suit)
         .clip(0.0, 1.0)
     )
+    # Evidence recipes also carry suitable_fraction via irrig-aware GAEZ; near-zero → 0.
     train = train.with_columns(
         pl.when(pl.col("label_source") == "hostile_zero")
         .then(0.0)
+        .when(pl.col("label_source").str.starts_with("evidence:"))
+        .then(
+            pl.when(pl.col("label_yield_kg_ha") <= 1.0)
+            .then(0.0)
+            .otherwise(soft_suit)
+        )
         .otherwise(soft_suit)
         .alias("label_suitable_fraction"),
         pl.lit(1.0).alias("sample_weight_suit"),
@@ -462,6 +576,7 @@ def build_training_table(
     loc_labels, hist_meta = expand_historic_yields_to_locations(bahs, geometry)
     meta = {
         **hist_meta,
+        **evidence_meta,
         "n_train_rows": int(train.height),
         "n_historic_train_rows": int(historic_rows.height),
         "n_hostile_train_rows": int(zeros.height),
@@ -472,7 +587,7 @@ def build_training_table(
         "seed_rate_kg_ha": WHEAT_SEED_RATE_KG_HA,
         "pretty_wheat_gross_kg_ha": PRETTY_WHEAT_GROSS_KG_HA,
         "soft_prior_source": "gaez_low_input_wheat",
-        "method": "bahs_historic_plus_gaez_scaled_shape",
+        "method": "bahs_plus_global_evidence_plus_gaez_shape",
     }
     return train, loc_labels, meta
 
@@ -746,7 +861,9 @@ def validate_pnp_predictions(
 
     assumption_tests = _assumption_tests(joined)
 
-    passed = all(bool(v["passed"]) for v in checks.values())
+    physical_passed = all(bool(v["passed"]) for v in checks.values())
+    assumption_passed = all(bool(v["passed"]) for v in assumption_tests.values())
+    passed = physical_passed and assumption_passed
     return ValidationReport(
         passed=passed,
         checks=checks,
@@ -761,6 +878,8 @@ def validate_pnp_predictions(
                 sum(1 for v in assumption_tests.values() if v.get("passed"))
             ),
             "assumption_tests_total": float(len(assumption_tests)),
+            "physical_gates_passed": float(physical_passed),
+            "assumption_gates_passed": float(assumption_passed),
         },
         tech_scale=tech_scale,
         assumption_tests=assumption_tests,
@@ -895,7 +1014,7 @@ def train_and_predict_pnp_wheat(
 ) -> tuple[pl.DataFrame, ValidationReport, dict]:
     """Historic-BAHS supervised train → attribute extrapolation → validate."""
 
-    _ = evidence_path, crop_mode_labels_path  # legacy kwargs kept for CLI compat
+    _ = crop_mode_labels_path  # legacy kwargs kept for CLI compat
     if geometry_path is None or not geometry_path.is_file():
         raise FileNotFoundError("geometry_path required for historic BAHS join")
     if external_wide_path is None:
@@ -910,7 +1029,9 @@ def train_and_predict_pnp_wheat(
         external_wide_path=external_wide_path,
     )
     train, loc_labels, label_meta = build_training_table(
-        features, geometry_path=geometry_path
+        features,
+        geometry_path=geometry_path,
+        evidence_path=evidence_path,
     )
     yield_model, suit_model, columns, train_meta = train_pnp_wheat_models(train)
     predictions = predict_pnp_wheat(
@@ -936,7 +1057,7 @@ def train_and_predict_pnp_wheat(
         "validation_checks": report.checks,
         "validation_metrics": report.metrics,
         "assumption_tests": report.assumption_tests or {},
-        "method": "bahs_historic_plus_gaez_scaled_shape",
+        "method": "bahs_plus_global_evidence_plus_gaez_shape",
     }
     (model_dir / "pnp_wheat_model_card.json").write_text(
         json.dumps(card, indent=2), encoding="utf-8"
