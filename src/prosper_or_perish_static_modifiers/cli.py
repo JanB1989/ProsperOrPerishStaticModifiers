@@ -154,6 +154,10 @@ def cmd_build_external(args: argparse.Namespace) -> int:
 
 def cmd_build_pnp(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
+    crop_labels = (
+        cfg.repo
+        / "../ProsperOrPerishConstructor/artifacts/data/population_capacity/crop_mode_labels.parquet"
+    ).resolve()
     path = build_pnp_wide(
         candidates_path=cfg.location_candidates_path,
         pyaez_yields_path=cfg.pyaez_yields_path,
@@ -162,6 +166,8 @@ def cmd_build_pnp(args: argparse.Namespace) -> int:
         output_path=cfg.pnp_wide_path,
         model_dir=cfg.pnp_model_dir,
         require_validation=not args.allow_failed_validation,
+        external_wide_path=cfg.external_wide_path if cfg.external_wide_path.is_file() else None,
+        crop_mode_labels_path=crop_labels if crop_labels.is_file() else None,
     )
     print(json.dumps({"pnp_wide": str(path), "model_dir": str(cfg.pnp_model_dir)}, indent=2))
     return 0

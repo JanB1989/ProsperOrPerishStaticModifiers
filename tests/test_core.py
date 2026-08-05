@@ -305,38 +305,74 @@ def test_pilot_layer_catalog_covers_plan() -> None:
     }
 
 
-def test_evidence_catalog_and_soft_scaling(tmp_path: Path) -> None:
+def test_evidence_attribute_labels_not_region_scale(tmp_path: Path) -> None:
     from prosper_or_perish_static_modifiers.pnp_evidence import (
-        apply_evidence_target_scales,
+        build_location_labels_from_evidence,
         load_evidence_catalog,
+        match_mask,
     )
+    from prosper_or_perish_static_modifiers.pnp_model import feature_columns
 
     catalog = load_evidence_catalog()
-    assert catalog.good == "wheat"
-    assert catalog.global_anchor["target_positive_median_kg_ha"] == 515.0
+    assert catalog.version >= 2
+    assert catalog.method["name"] == "attribute_matched_dual_head"
     ids = {e["id"] for e in catalog.evidence}
-    assert "egypt_nile_mamluk" in ids
-    assert "indonesia_near_zero" in ids
+    assert "nile_irrigated_corridor" in ids
+    assert "tropical_jungle" in ids
+    # No regional overwrite helpers.
+    import prosper_or_perish_static_modifiers.pnp_evidence as ev
+
+    assert not hasattr(ev, "apply_evidence_target_scales")
+    assert not hasattr(ev, "fit_evidence_residual_calibrator")
 
     frame = pl.DataFrame(
         {
-            "location_tag": ["a", "b", "c", "d", "e", "f"],
-            "region": [
-                "egypt_region",
-                "egypt_region",
-                "egypt_region",
-                "egypt_region",
-                "egypt_region",
-                "egypt_region",
-            ],
-            "target_yield_kg_ha": [50.0, 60.0, 70.0, 80.0, 90.0, 100.0],
-            "target_production_density_kg_ha": [25.0, 30.0, 35.0, 40.0, 45.0, 50.0],
+            "location_tag": ["nile", "desert", "jungle", "paris"],
+            "climate": ["arid", "arid", "tropical", "oceanic"],
+            "vegetation": ["farmland", "desert", "jungle", "farmland"],
+            "has_river": [True, False, False, False],
+            "calibrated_lat": [26.0, 24.0, 0.0, 49.0],
+            "calibrated_lon": [32.0, 26.0, 20.0, 2.0],
+            "chelsa_annual_precipitation": [50.0, 40.0, 2000.0, 700.0],
+            "farm_system_hydraulic_access_fraction": [0.0, 0.0, 0.0, 0.0],
+            "gaez_wheat_irrigated_low_input_yield": [0.0, 0.0, 0.0, 400.0],
+            "gaez_wheat_low_input_yield": [0.0, 0.0, 0.0, 500.0],
+            "soil_quality_ord": [4.0, 1.0, 3.0, 5.0],
+            "physical_yield_kg_ha": [100.0, 10.0, 5.0, 400.0],
+            "physical_suitable_fraction": [0.2, 0.0, 0.0, 0.7],
         }
     )
-    out, meta = apply_evidence_target_scales(frame, catalog)
-    assert meta["n_touched"] == 6
-    assert float(out["target_yield_kg_ha"].mean()) > float(frame["target_yield_kg_ha"].mean())
-    assert "evidence_target_scale" in out.columns
+    nile_entry = next(e for e in catalog.evidence if e["id"] == "nile_irrigated_corridor")
+    assert int(match_mask(frame, nile_entry["match"]).sum()) == 1
+
+    out, meta = build_location_labels_from_evidence(frame, catalog, crop_history_path=None)
+    nile = out.filter(pl.col("location_tag") == "nile")["label_yield_kg_ha"][0]
+    desert = out.filter(pl.col("location_tag") == "desert")["label_yield_kg_ha"][0]
+    jungle = out.filter(pl.col("location_tag") == "jungle")["label_yield_kg_ha"][0]
+    assert nile == pytest.approx(1090.0)
+    assert desert == pytest.approx(0.0)
+    assert jungle == pytest.approx(0.0)
+    assert meta["n_hard"] >= 3
+
+    # Feature ban on region IDs.
+    feat_frame = frame.with_columns(
+        pl.lit("egypt_region").alias("region"),
+        pl.lit(0.0).alias("abs_lat"),
+        pl.lit(0.0).alias("aridity_proxy"),
+        pl.lit(0.0).alias("temp_distance_from_optimum"),
+        pl.lit(0.0).alias("severe_winter"),
+        pl.lit(0.0).alias("has_river_f"),
+        pl.lit(0.0).alias("has_winter_f"),
+        pl.lit(0.0).alias("is_coastal_f"),
+        pl.lit(0.0).alias("is_adjacent_to_lake_f"),
+        pl.lit(0.0).alias("pyaez_wheat_rainfed_yield"),
+        pl.lit(0.0).alias("pyaez_wheat_irrigated_yield"),
+        pl.lit(0.0).alias("pyaez_wheat_rainfed_suit"),
+        pl.lit(0.0).alias("pyaez_wheat_irrigated_suit"),
+    )
+    feats = feature_columns(feat_frame)
+    assert "region" not in feats
+    assert "has_river_f" in feats or "calibrated_lat" in feats
 
 
 def test_suitability_class_and_pnp_publish(tmp_path: Path) -> None:

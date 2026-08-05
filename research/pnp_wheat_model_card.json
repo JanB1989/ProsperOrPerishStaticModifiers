@@ -1,21 +1,50 @@
 {
   "feature_columns": [
-    "chelsa_annual_mean_temperature_target",
-    "chelsa_annual_precipitation_target",
-    "chelsa_precipitation_seasonality_target",
     "calibrated_lat",
     "calibrated_lon",
+    "chelsa_annual_mean_temperature",
+    "chelsa_annual_precipitation",
+    "chelsa_precipitation_seasonality",
+    "gaez_wheat_low_input_yield",
+    "gaez_wheat_low_input_yield_suitable_fraction",
+    "gaez_wheat_irrigated_low_input_yield",
+    "gaez_wheat_irrigated_low_input_yield_suitable_fraction",
+    "gaez_irrigated_wheat_potential",
+    "gaez_wheat_suitability",
+    "gaez_wheat_land_yield",
+    "gaez_barley_low_input_yield",
+    "terrain_irrigable_fraction",
+    "water_irrigable_fraction",
+    "conveyance_irrigable_fraction",
+    "irrigable_fraction",
+    "farm_system_hydraulic_access_fraction",
+    "farm_system_production_scale_p50",
+    "spam_wheat_rainfed_yield",
+    "spam_wheat_rainfed_harvested_area",
+    "europe_ag_suitability_1500",
+    "hyde_pop_density_1300",
+    "glw_cattle_density",
+    "glw_sheep_density",
+    "wheat_rainfed_yield_kg_dm_suitable_km2",
+    "wheat_rainfed_suitable_fraction",
+    "wheat_irrigated_yield_kg_dm_suitable_km2",
+    "wheat_irrigated_suitable_fraction",
+    "barley_rainfed_yield_kg_dm_suitable_km2",
+    "rye_rainfed_yield_kg_dm_suitable_km2",
+    "oats_rainfed_yield_kg_dm_suitable_km2",
     "abs_lat",
     "aridity_proxy",
     "temp_distance_from_optimum",
     "severe_winter",
     "soil_quality_ord",
-    "gaez_wheat_yield_km2",
-    "gaez_wheat_suitable_fraction",
-    "gaez_barley_yield_km2",
-    "gaez_rye_yield_km2",
-    "gaez_oats_yield_km2",
-    "prefer_irrigated",
+    "has_river_f",
+    "has_winter_f",
+    "is_coastal_f",
+    "is_adjacent_to_lake_f",
+    "pyaez_wheat_rainfed_yield",
+    "pyaez_wheat_irrigated_yield",
+    "pyaez_wheat_rainfed_suit",
+    "pyaez_wheat_irrigated_suit",
     "topo_atoll",
     "topo_flatland",
     "topo_hills",
@@ -39,588 +68,342 @@
     "clim_subtropical",
     "clim_tropical"
   ],
-  "tech_scale": 0.3255372945638432,
+  "n_features": 67,
+  "tech_scale": 0.38692712246431255,
   "bahs_wheat_gross_kg_ha": 515.0,
-  "cv_r2_yield": 0.9364190660811333,
-  "cv_r2_suitable_fraction": -0.008136903469282789,
+  "cv_r2_yield": 0.9697681865415045,
+  "cv_r2_suitable_fraction": 0.9869409338660778,
   "n_rows": 20929,
-  "global_anchor_kg_ha": 515.0,
-  "pyaez_positive_median_before_scale": 1582.0,
-  "prefer_irrigated_regions": [
-    "crescent_region",
-    "egypt_region",
-    "hindustan_region"
+  "feature_importance_top": [
+    {
+      "feature": "severe_winter",
+      "importance_mean": 0.24084737527677302,
+      "importance_std": 0.024856751003635446
+    },
+    {
+      "feature": "pyaez_wheat_irrigated_yield",
+      "importance_mean": 0.16694119514122172,
+      "importance_std": 0.01247386494902397
+    },
+    {
+      "feature": "wheat_irrigated_yield_kg_dm_suitable_km2",
+      "importance_mean": 0.12336231371805788,
+      "importance_std": 0.010936498706745996
+    },
+    {
+      "feature": "pyaez_wheat_rainfed_yield",
+      "importance_mean": 0.11522596509568153,
+      "importance_std": 0.006283703104110444
+    },
+    {
+      "feature": "has_river_f",
+      "importance_mean": 0.11217179731302085,
+      "importance_std": 0.008830203673304792
+    },
+    {
+      "feature": "chelsa_annual_mean_temperature",
+      "importance_mean": 0.06737629525006031,
+      "importance_std": 0.0036193785794033694
+    },
+    {
+      "feature": "veg_forest",
+      "importance_mean": 0.05322102481858302,
+      "importance_std": 0.0044762775385967166
+    },
+    {
+      "feature": "soil_quality_ord",
+      "importance_mean": 0.050272517613142644,
+      "importance_std": 0.003838612495153454
+    },
+    {
+      "feature": "veg_farmland",
+      "importance_mean": 0.04844583387999024,
+      "importance_std": 0.017259163796970886
+    },
+    {
+      "feature": "clim_tropical",
+      "importance_mean": 0.043431318553661336,
+      "importance_std": 0.002383524752436138
+    },
+    {
+      "feature": "abs_lat",
+      "importance_mean": 0.04335798899908376,
+      "importance_std": 0.005156141891491572
+    },
+    {
+      "feature": "calibrated_lat",
+      "importance_mean": 0.03647905269188676,
+      "importance_std": 0.0015372088358202934
+    },
+    {
+      "feature": "clim_arid",
+      "importance_mean": 0.030843489193221284,
+      "importance_std": 0.007926585611045324
+    },
+    {
+      "feature": "europe_ag_suitability_1500",
+      "importance_mean": 0.02464366796952917,
+      "importance_std": 0.005152249054062423
+    },
+    {
+      "feature": "wheat_rainfed_yield_kg_dm_suitable_km2",
+      "importance_mean": 0.021581575720747526,
+      "importance_std": 0.001747599778244153
+    },
+    {
+      "feature": "clim_continental",
+      "importance_mean": 0.018135559043718174,
+      "importance_std": 0.001475624011757681
+    },
+    {
+      "feature": "chelsa_annual_precipitation",
+      "importance_mean": 0.01664835274138632,
+      "importance_std": 0.0011785498636017273
+    },
+    {
+      "feature": "clim_cold_arid",
+      "importance_mean": 0.014112741675831741,
+      "importance_std": 0.0009001168534445085
+    },
+    {
+      "feature": "clim_subtropical",
+      "importance_mean": 0.012117400203038576,
+      "importance_std": 0.0004785895147821438
+    },
+    {
+      "feature": "clim_mediterranean",
+      "importance_mean": 0.011206720992199637,
+      "importance_std": 0.0005076594721182898
+    },
+    {
+      "feature": "veg_woods",
+      "importance_mean": 0.010611848377397815,
+      "importance_std": 0.0023819074723520225
+    },
+    {
+      "feature": "gaez_irrigated_wheat_potential",
+      "importance_mean": 0.009511386190268766,
+      "importance_std": 0.0007919901162694395
+    },
+    {
+      "feature": "veg_sparse",
+      "importance_mean": 0.007387264669713911,
+      "importance_std": 0.0008375988598356149
+    },
+    {
+      "feature": "calibrated_lon",
+      "importance_mean": 0.007357059166434232,
+      "importance_std": 0.0008005160918395411
+    },
+    {
+      "feature": "aridity_proxy",
+      "importance_mean": 0.005950020364800834,
+      "importance_std": 0.00010657513102913752
+    }
   ],
+  "pyaez_positive_median_before_scale": 1331.0,
   "evidence_path": "/home/jan/development/ProsperOrPerishStaticModifiers/research/pnp_wheat_evidence.json",
-  "evidence_version": 1,
-  "evidence_target_scaling": {
-    "n_touched": 6999,
-    "scale_mean": 0.982090247516527,
-    "scale_p05": 0.7867573996947063,
-    "scale_p95": 1.1434872781492207,
-    "entries": [
+  "evidence_version": 2,
+  "label_construction": {
+    "n_hard": 7832,
+    "n_soft_physical": 13097,
+    "n_crop_history_presence": 1348,
+    "recipes": [
       {
-        "id": "britain_winchester_demesne",
-        "kind": "positive_median",
-        "n": 234,
-        "n_positive": 211,
-        "weight": 0.75,
-        "pre_median_kg_ha": 376.6466498103666,
-        "target_kg_ha": 515.0,
-        "raw_ratio": 1.3673292999135696,
-        "clipped_ratio": 1.3673292999135696
+        "id": "maghreb_holdout",
+        "holdout": true,
+        "n_match": 98,
+        "used_in_training": false
       },
       {
-        "id": "france_medieval_band",
-        "kind": "positive_median",
-        "n": 446,
-        "n_positive": 434,
-        "weight": 0.55,
-        "pre_median_kg_ha": 691.441213653603,
-        "target_kg_ha": 700.0,
-        "raw_ratio": 1.012378183679813,
-        "clipped_ratio": 1.012378183679813
-      },
-      {
-        "id": "italy_malanima",
-        "kind": "positive_median",
-        "n": 299,
-        "n_positive": 289,
-        "weight": 0.55,
-        "pre_median_kg_ha": 571.6434892541087,
-        "target_kg_ha": 420.0,
-        "raw_ratio": 0.7347236658778779,
-        "clipped_ratio": 0.7347236658778779
-      },
-      {
-        "id": "iberia_seed_ratio",
-        "kind": "positive_median",
-        "n": 424,
-        "n_positive": 421,
-        "weight": 0.35,
-        "pre_median_kg_ha": 596.7098609355246,
-        "target_kg_ha": 520.0,
-        "raw_ratio": 0.8714452936721064,
-        "clipped_ratio": 0.8714452936721064
-      },
-      {
-        "id": "north_german_seed_ratio",
-        "kind": "positive_median",
-        "n": 767,
-        "n_positive": 725,
-        "weight": 0.35,
-        "pre_median_kg_ha": 692.7433628318583,
-        "target_kg_ha": 450.0,
-        "raw_ratio": 0.649591211037302,
-        "clipped_ratio": 0.649591211037302
-      },
-      {
-        "id": "carpathia_hungary_seed_ratio",
-        "kind": "positive_median",
-        "n": 260,
-        "n_positive": 259,
-        "weight": 0.35,
-        "pre_median_kg_ha": 882.8571428571428,
-        "target_kg_ha": 420.0,
-        "raw_ratio": 0.4757281553398059,
-        "clipped_ratio": 0.4757281553398059
-      },
-      {
-        "id": "anatolia_ottoman_proxy",
-        "kind": "positive_median",
-        "n": 258,
-        "n_positive": 258,
-        "weight": 0.35,
-        "pre_median_kg_ha": 849.0012642225031,
-        "target_kg_ha": 650.0,
-        "raw_ratio": 0.7656054559533029,
-        "clipped_ratio": 0.7656054559533029
-      },
-      {
-        "id": "north_china_song",
-        "kind": "positive_median",
-        "n": 522,
-        "n_positive": 450,
-        "weight": 0.55,
-        "pre_median_kg_ha": 674.5132743362832,
-        "target_kg_ha": 650.0,
-        "raw_ratio": 0.9636578325898714,
-        "clipped_ratio": 0.9636578325898714
-      },
-      {
-        "id": "south_china_winter_wheat",
-        "kind": "positive_median",
-        "n": 419,
-        "n_positive": 407,
-        "weight": 0.55,
-        "pre_median_kg_ha": 235.36346396965865,
-        "target_kg_ha": 400.0,
-        "raw_ratio": 1.6994991204393775,
-        "clipped_ratio": 1.6994991204393775
-      },
-      {
-        "id": "hindustan_indo_gangetic",
-        "kind": "positive_median",
-        "n": 333,
-        "n_positive": 308,
-        "weight": 0.55,
-        "pre_median_kg_ha": 451.1946902654867,
-        "target_kg_ha": 1100.0,
-        "raw_ratio": 2.4379719525350594,
-        "clipped_ratio": 2.4379719525350594
-      },
-      {
-        "id": "egypt_nile_mamluk",
-        "kind": "positive_median",
-        "n": 82,
-        "n_positive": 70,
-        "weight": 0.55,
-        "pre_median_kg_ha": 330.7458912768647,
-        "target_kg_ha": 1090.0,
-        "raw_ratio": 3.2955813775705223,
-        "clipped_ratio": 3.2955813775705223
-      },
-      {
-        "id": "crescent_irrigated_corridor",
-        "kind": "positive_median",
-        "n": 174,
-        "n_positive": 171,
-        "weight": 0.35,
-        "pre_median_kg_ha": 562.8539823008849,
+        "id": "fertile_crescent_irrigated",
+        "kind": "yield_intensity",
+        "n_match": 140,
         "target_kg_ha": 900.0,
-        "raw_ratio": 1.5989937502456666,
-        "clipped_ratio": 1.5989937502456666
+        "weight": 1.5,
+        "holdout": false,
+        "used_in_training": true
       },
       {
-        "id": "maghreb_coastal_wheat",
-        "kind": "positive_median",
-        "n": 304,
-        "n_positive": 200,
-        "weight": 0.35,
-        "pre_median_kg_ha": 659.8640960809103,
-        "target_kg_ha": 550.0,
-        "raw_ratio": 0.8335049645322131,
-        "clipped_ratio": 0.8335049645322131
+        "id": "anatolia_holdout",
+        "holdout": true,
+        "n_match": 186,
+        "used_in_training": false
       },
       {
-        "id": "bengal_rice_dominant",
-        "kind": "positive_median",
-        "n": 289,
-        "n_positive": 272,
-        "weight": 0.55,
-        "pre_median_kg_ha": 274.59070796460173,
-        "target_kg_ha": 250.0,
-        "raw_ratio": 0.9104459573782381,
-        "clipped_ratio": 0.9104459573782381
+        "id": "mediterranean_rainfed",
+        "kind": "yield_intensity",
+        "n_match": 362,
+        "target_kg_ha": 420.0,
+        "weight": 2.0,
+        "holdout": false,
+        "used_in_training": true
       },
       {
-        "id": "indonesia_near_zero",
+        "id": "north_china_winter_wheat",
+        "kind": "yield_intensity",
+        "n_match": 401,
+        "target_kg_ha": 650.0,
+        "weight": 2.0,
+        "holdout": false,
+        "used_in_training": true
+      },
+      {
+        "id": "hyper_arid_no_water",
         "kind": "near_zero",
-        "n": 1342,
-        "weight": 0.75,
-        "implied_ratio": 0.5714285714285714
+        "n_match": 100,
+        "target_kg_ha": 0.0,
+        "weight": 2.0,
+        "holdout": false,
+        "used_in_training": true
       },
       {
-        "id": "congo_near_zero",
+        "id": "temperate_rainfed_demesne",
+        "kind": "yield_intensity",
+        "n_match": 2279,
+        "target_kg_ha": 515.0,
+        "weight": 2.5,
+        "holdout": false,
+        "used_in_training": true
+      },
+      {
+        "id": "indo_gangetic_irrigated",
+        "kind": "yield_intensity",
+        "n_match": 126,
+        "target_kg_ha": 1100.0,
+        "weight": 2.5,
+        "holdout": false,
+        "used_in_training": true
+      },
+      {
+        "id": "tropical_jungle",
         "kind": "near_zero",
-        "n": 846,
-        "weight": 0.75,
-        "implied_ratio": 0.5714285714285714
-      }
-    ]
-  },
-  "n_evidence_entries": 16,
-  "residual_calibration": {
-    "n_train": 6999,
-    "feature_columns": [
-      "chelsa_annual_mean_temperature_target",
-      "chelsa_annual_precipitation_target",
-      "chelsa_precipitation_seasonality_target",
-      "calibrated_lat",
-      "calibrated_lon",
-      "abs_lat",
-      "aridity_proxy",
-      "temp_distance_from_optimum",
-      "severe_winter",
-      "soil_quality_ord",
-      "gaez_wheat_yield_km2",
-      "gaez_wheat_suitable_fraction",
-      "gaez_barley_yield_km2",
-      "gaez_rye_yield_km2",
-      "gaez_oats_yield_km2",
-      "prefer_irrigated",
-      "topo_atoll",
-      "topo_flatland",
-      "topo_hills",
-      "topo_mountain_wasteland",
-      "topo_mountains",
-      "topo_plateau",
-      "topo_wetlands",
-      "veg_desert",
-      "veg_farmland",
-      "veg_forest",
-      "veg_grasslands",
-      "veg_jungle",
-      "veg_sparse",
-      "veg_woods",
-      "clim_arctic",
-      "clim_arid",
-      "clim_cold_arid",
-      "clim_continental",
-      "clim_mediterranean",
-      "clim_oceanic",
-      "clim_subtropical",
-      "clim_tropical"
-    ],
-    "used": [
-      {
-        "id": "britain_winchester_demesne",
-        "kind": "positive_median",
-        "pred_median": 421.1721845195234,
-        "target": 515.0,
-        "ratio": 1.2227778066291726
+        "n_match": 2292,
+        "target_kg_ha": 0.0,
+        "weight": 2.5,
+        "holdout": false,
+        "used_in_training": true
       },
       {
-        "id": "france_medieval_band",
-        "kind": "positive_median",
-        "pred_median": 673.0242733207089,
-        "target": 700.0,
-        "ratio": 1.0400813577587515
-      },
-      {
-        "id": "italy_malanima",
-        "kind": "positive_median",
-        "pred_median": 516.8408532751305,
-        "target": 420.0,
-        "ratio": 0.8126292597393049
-      },
-      {
-        "id": "iberia_seed_ratio",
-        "kind": "positive_median",
-        "pred_median": 543.1622170390751,
-        "target": 520.0,
-        "ratio": 0.9573567227018501
-      },
-      {
-        "id": "north_german_seed_ratio",
-        "kind": "positive_median",
-        "pred_median": 628.9479846912121,
-        "target": 450.0,
-        "ratio": 0.7154804704890368
-      },
-      {
-        "id": "carpathia_hungary_seed_ratio",
-        "kind": "positive_median",
-        "pred_median": 759.9473180578206,
-        "target": 420.0,
-        "ratio": 0.5526698891093978
-      },
-      {
-        "id": "anatolia_ottoman_proxy",
-        "kind": "positive_median",
-        "pred_median": 769.194070095584,
-        "target": 650.0,
-        "ratio": 0.8450403159234283
-      },
-      {
-        "id": "north_china_song",
-        "kind": "positive_median",
-        "pred_median": 646.8876126175287,
-        "target": 650.0,
-        "ratio": 1.0048113262980527
-      },
-      {
-        "id": "south_china_winter_wheat",
-        "kind": "positive_median",
-        "pred_median": 282.6423987888914,
-        "target": 400.0,
-        "ratio": 1.415215840631059
-      },
-      {
-        "id": "hindustan_indo_gangetic",
-        "kind": "positive_median",
-        "pred_median": 601.4974561102702,
-        "target": 1100.0,
-        "ratio": 1.8287691640683204
-      },
-      {
-        "id": "egypt_nile_mamluk",
-        "kind": "positive_median",
-        "pred_median": 453.0245049941683,
-        "target": 1090.0,
-        "ratio": 2.4060508603481203
-      },
-      {
-        "id": "crescent_irrigated_corridor",
-        "kind": "positive_median",
-        "pred_median": 607.3163962657728,
-        "target": 900.0,
-        "ratio": 1.4819293625758516
-      },
-      {
-        "id": "maghreb_coastal_wheat",
-        "kind": "positive_median",
-        "pred_median": 554.0987892559266,
-        "target": 550.0,
-        "ratio": 0.9926027825084572
-      },
-      {
-        "id": "bengal_rice_dominant",
-        "kind": "positive_median",
-        "pred_median": 255.41239508650366,
-        "target": 250.0,
-        "ratio": 0.9788091917595833
-      },
-      {
-        "id": "indonesia_near_zero",
+        "id": "arctic_hostile",
         "kind": "near_zero",
-        "pred_mean": 22.36977147821056,
-        "ratio": 0.4470318353381738
+        "n_match": 2115,
+        "target_kg_ha": 0.0,
+        "weight": 2.5,
+        "holdout": false,
+        "used_in_training": true
       },
       {
-        "id": "congo_near_zero",
-        "kind": "near_zero",
-        "pred_mean": 65.62402472949664,
-        "ratio": 0.25
+        "id": "nile_irrigated_corridor",
+        "kind": "yield_intensity",
+        "n_match": 47,
+        "target_kg_ha": 1090.0,
+        "weight": 3.0,
+        "holdout": false,
+        "used_in_training": true
       }
     ],
-    "label_log_mean": -0.3204169010667604
+    "yield_label_mean": 245.3764435965569,
+    "suit_label_mean": 0.425134216662106
   },
+  "n_features_numeric_base": 45,
   "validation_passed": true,
   "validation_checks": {
     "A1_arctic_near_zero": {
       "passed": true,
-      "arctic_mean_kg_ha": 13.910500391336207,
+      "arctic_mean_kg_ha": 0.0,
       "n": 1134
     },
-    "A2_hyper_arid_low": {
+    "A2_hyper_arid_no_water_low": {
       "passed": true,
       "arid_mean_kg_ha": 0.0,
-      "n": 704
+      "n": 441
     },
     "A3_tropical_below_temperate": {
       "passed": true,
-      "tropical_mean_kg_ha": 16.71294656176242,
-      "temperate_mean_kg_ha": 440.3095961778046
+      "tropical_mean_kg_ha": 0.8566275382469598,
+      "temperate_mean_kg_ha": 526.8413129142887
     },
     "A4_nw_europe_high": {
       "passed": true,
-      "nw_europe_mean_kg_ha": 417.67969188042986,
+      "nw_europe_mean_kg_ha": 529.3590596289042,
       "n": 2420
     },
-    "A5_bahs_median_band": {
+    "A5_global_median_sane": {
       "passed": true,
-      "positive_median_kg_ha": 403.7143537994989,
-      "target_kg_ha": 515.0
+      "positive_median_kg_ha": 502.8694316451283,
+      "reference_bahs_kg_ha": 515.0
     },
     "A6_model_fit": {
       "passed": true,
-      "cv_r2_yield": 0.9364190660811333
+      "cv_r2_yield": 0.9697681865415045
     },
-    "E_britain_winchester_demesne": {
+    "S_nile_river_arid": {
       "passed": true,
-      "kind": "positive_median",
-      "n": 234,
-      "n_positive": 211,
-      "positive_median_kg_ha": 508.18900446788757,
-      "target_kg_ha": 515.0,
-      "band": [
-        334.75,
-        695.25
-      ],
-      "confidence": "high"
+      "n": 47,
+      "mean_kg_ha": 1074.0012956451565,
+      "positive_median_kg_ha": 1092.392655984366,
+      "expect": "positive_median_gte",
+      "threshold_kg_ha": 700.0
     },
-    "E_france_medieval_band": {
+    "S_desert_no_river": {
       "passed": true,
-      "kind": "positive_median",
-      "n": 446,
-      "n_positive": 444,
-      "positive_median_kg_ha": 667.3307063568302,
-      "target_kg_ha": 700.0,
-      "band": [
-        420.0,
-        979.9999999999999
-      ],
-      "confidence": "medium"
+      "n": 441,
+      "mean_kg_ha": 0.0,
+      "positive_median_kg_ha": 0.0,
+      "expect": "mean_lte",
+      "threshold_kg_ha": 80.0
     },
-    "E_italy_malanima": {
+    "S_tropical_jungle": {
       "passed": true,
-      "kind": "positive_median",
-      "n": 299,
-      "n_positive": 292,
-      "positive_median_kg_ha": 422.0676289629422,
-      "target_kg_ha": 420.0,
-      "band": [
-        252.0,
-        588.0
-      ],
-      "confidence": "medium"
+      "n": 1871,
+      "mean_kg_ha": 0.8566275382469598,
+      "positive_median_kg_ha": 6.9457163360292675,
+      "expect": "mean_lte",
+      "threshold_kg_ha": 80.0
     },
-    "E_iberia_seed_ratio": {
+    "S_nw_europe_farmland": {
       "passed": true,
-      "kind": "positive_median",
-      "n": 424,
-      "n_positive": 423,
-      "positive_median_kg_ha": 526.8706088455359,
-      "target_kg_ha": 520.0,
-      "band": [
-        286.0,
-        754.0
-      ],
-      "confidence": "low"
+      "n": 93,
+      "mean_kg_ha": 521.4238963359184,
+      "positive_median_kg_ha": 515.1849469184131,
+      "expect": "positive_median_gte",
+      "threshold_kg_ha": 350.0
     },
-    "E_north_german_seed_ratio": {
+    "H_anatolia_holdout": {
       "passed": true,
-      "kind": "positive_median",
-      "n": 767,
-      "n_positive": 739,
-      "positive_median_kg_ha": 449.7512316976477,
-      "target_kg_ha": 450.0,
-      "band": [
-        247.50000000000003,
-        652.5
-      ],
-      "confidence": "low"
-    },
-    "E_carpathia_hungary_seed_ratio": {
-      "passed": true,
-      "kind": "positive_median",
-      "n": 260,
-      "n_positive": 259,
-      "positive_median_kg_ha": 440.7708712558772,
-      "target_kg_ha": 420.0,
-      "band": [
-        210.0,
-        630.0
-      ],
-      "confidence": "low"
-    },
-    "E_anatolia_ottoman_proxy": {
-      "passed": true,
-      "kind": "positive_median",
-      "n": 258,
-      "n_positive": 258,
-      "positive_median_kg_ha": 642.6492276032885,
+      "n": 186,
+      "n_positive": 186,
+      "positive_median_kg_ha": 481.09385341536984,
       "target_kg_ha": 650.0,
       "band": [
-        357.50000000000006,
-        942.5
+        325.0,
+        975.0
       ],
-      "confidence": "low"
+      "holdout": true
     },
-    "E_north_china_song": {
+    "H_maghreb_holdout": {
       "passed": true,
-      "kind": "positive_median",
-      "n": 522,
-      "n_positive": 492,
-      "positive_median_kg_ha": 662.4775153936666,
-      "target_kg_ha": 650.0,
-      "band": [
-        390.0,
-        909.9999999999999
-      ],
-      "confidence": "medium"
-    },
-    "E_south_china_winter_wheat": {
-      "passed": true,
-      "kind": "positive_median",
-      "n": 419,
-      "n_positive": 412,
-      "positive_median_kg_ha": 380.52321169409356,
-      "target_kg_ha": 400.0,
-      "band": [
-        200.0,
-        600.0
-      ],
-      "confidence": "medium"
-    },
-    "E_hindustan_indo_gangetic": {
-      "passed": true,
-      "kind": "positive_median",
-      "n": 333,
-      "n_positive": 333,
-      "positive_median_kg_ha": 1087.6024043662305,
-      "target_kg_ha": 1100.0,
-      "band": [
-        605.0,
-        1595.0
-      ],
-      "confidence": "medium"
-    },
-    "E_egypt_nile_mamluk": {
-      "passed": true,
-      "kind": "positive_median",
-      "n": 82,
-      "n_positive": 82,
-      "positive_median_kg_ha": 1067.1453064123202,
-      "target_kg_ha": 1090.0,
-      "band": [
-        599.5,
-        1580.5
-      ],
-      "confidence": "medium"
-    },
-    "E_crescent_irrigated_corridor": {
-      "passed": true,
-      "kind": "positive_median",
-      "n": 174,
-      "n_positive": 174,
-      "positive_median_kg_ha": 911.6629470274315,
-      "target_kg_ha": 900.0,
-      "band": [
-        450.0,
-        1350.0
-      ],
-      "confidence": "low"
-    },
-    "E_maghreb_coastal_wheat": {
-      "passed": true,
-      "kind": "positive_median",
-      "n": 304,
-      "n_positive": 274,
-      "positive_median_kg_ha": 502.78288602591596,
+      "n": 98,
+      "n_positive": 92,
+      "positive_median_kg_ha": 421.83360864697414,
       "target_kg_ha": 550.0,
       "band": [
         275.0,
         825.0
       ],
-      "confidence": "low"
-    },
-    "E_bengal_rice_dominant": {
-      "passed": true,
-      "kind": "positive_median",
-      "n": 289,
-      "n_positive": 271,
-      "positive_median_kg_ha": 238.2131936944242,
-      "target_kg_ha": 250.0,
-      "band": [
-        100.0,
-        400.0
-      ],
-      "confidence": "medium"
-    },
-    "E_indonesia_near_zero": {
-      "passed": true,
-      "kind": "near_zero",
-      "n": 1342,
-      "mean_kg_ha": 11.372334251524624,
-      "max_mean_kg_ha": 40.0
-    },
-    "E_congo_near_zero": {
-      "passed": true,
-      "kind": "near_zero",
-      "n": 846,
-      "mean_kg_ha": 16.46891696358929,
-      "max_mean_kg_ha": 40.0
+      "holdout": true
     }
   },
   "validation_metrics": {
-    "tech_scale": 0.3255372945638432,
-    "cv_r2_yield": 0.9364190660811333,
-    "positive_median_kg_ha": 403.7143537994989,
-    "nw_europe_mean_kg_ha": 417.67969188042986,
-    "arctic_mean_kg_ha": 13.910500391336207,
-    "n_evidence_gates": 16.0,
-    "n_evidence_gates_passed": 16.0
-  }
+    "tech_scale": 0.38692712246431255,
+    "cv_r2_yield": 0.9697681865415045,
+    "positive_median_kg_ha": 502.8694316451283,
+    "nw_europe_mean_kg_ha": 529.3590596289042,
+    "arctic_mean_kg_ha": 0.0,
+    "n_strata_gates": 4.0,
+    "n_strata_passed": 4.0,
+    "n_holdout_passed": 2.0
+  },
+  "method": "attribute_matched_dual_head"
 }

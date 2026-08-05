@@ -17,6 +17,8 @@ def build_pnp_wide(
     output_path: Path,
     model_dir: Path,
     require_validation: bool = True,
+    external_wide_path: Path | None = None,
+    crop_mode_labels_path: Path | None = None,
 ) -> Path:
     """Train the 1337 wheat model and emit one wide row per location."""
 
@@ -26,6 +28,8 @@ def build_pnp_wide(
         gaez_wide_path=gaez_wide_path,
         model_dir=model_dir,
         geometry_path=geometry_path,
+        external_wide_path=external_wide_path,
+        crop_mode_labels_path=crop_mode_labels_path,
     )
     if require_validation and not report.passed:
         failed = [k for k, v in report.checks.items() if not v["passed"]]
