@@ -5,6 +5,7 @@ from pathlib import Path
 import polars as pl
 
 from prosper_or_perish_static_modifiers.crops import (
+    HECTARES_PER_KM2,
     WATER_MODES,
     iter_metrics,
     metric_column,
@@ -184,9 +185,18 @@ def build_wide_from_labels(
         "crop",
         "water_mode",
         "yield_kg_dm_ha",
-        "production_density_kg_dm_total_ha",
         "suitable_fraction",
     ]
+    density_src = None
+    if "production_density_kg_dm_total_km2" in labels.columns:
+        density_src = "production_density_kg_dm_total_km2"
+    elif "production_density_kg_dm_total_ha" in labels.columns:
+        density_src = "production_density_kg_dm_total_ha"
+    else:
+        raise ValueError(
+            "labels parquet missing production density column "
+            "(production_density_kg_dm_total_km2 or production_density_kg_dm_total_ha)"
+        )
     missing = [col for col in required if col not in labels.columns]
     if missing:
         raise ValueError(f"labels parquet missing columns: {missing}")
@@ -197,8 +207,14 @@ def build_wide_from_labels(
         "crop_cycle_length_days",
         "suitability_index",
     ]
-    keep = required + [col for col in optional if col in labels.columns]
+    keep = required + [density_src] + [col for col in optional if col in labels.columns]
     labels = labels.select(keep)
+    if density_src == "production_density_kg_dm_total_ha":
+        labels = labels.with_columns(
+            (pl.col("production_density_kg_dm_total_ha") * HECTARES_PER_KM2).alias(
+                "production_density_kg_dm_total_km2"
+            )
+        ).drop("production_density_kg_dm_total_ha")
 
     labels = _enrich_long_metrics(
         labels,

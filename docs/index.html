@@ -162,8 +162,9 @@
     <h1>GAEZ Crop Mapmodes</h1>
     <p class="note">
       EU5 locations colored by FAO GAEZ v5 HP8100 (1981–2000) modern crop/soil physics.
-      Default metric is production density (kg dry matter per total cell hectare).
+      Default metric is production density (kg dry matter per km² of total cell area).
       Dataset switch: GAEZ potential, or exploration layers (MapSPAM / GLW / Europe 1500 / population / EU5).
+      Density mapmodes use people or heads per km²; color scale is the 98th percentile of the active layer.
     </p>
   </header>
   <div class="controls">
@@ -307,9 +308,12 @@
     if (metricId === "cycle_start") return "day " + Math.round(v);
     if (metricId === "cycle_length") return Math.round(v) + " d";
     if (metricId === "irrigation_need") return (v >= 10 ? v.toFixed(0) : v.toFixed(1)) + " mm";
-    if (v >= 1000) return v.toFixed(0);
+    // Densities (people/km², kg DM/km², heads/km²) and totals: keep readable precision.
+    if (v >= 10000) return v.toFixed(0);
+    if (v >= 100) return v.toFixed(1);
     if (v >= 10) return v.toFixed(1);
-    return v.toFixed(2);
+    if (v >= 1) return v.toFixed(2);
+    return v.toFixed(3);
   }
 
   async function main() {

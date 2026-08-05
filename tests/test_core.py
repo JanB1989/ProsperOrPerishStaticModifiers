@@ -50,7 +50,7 @@ def test_wide_pivot_column_naming() -> None:
             "crop": ["wheat", "wheat", "wheat", "wheat"],
             "water_mode": ["rainfed", "irrigated", "rainfed", "irrigated"],
             "yield_kg_dm_ha": [1.0, 2.0, 3.0, 4.0],
-            "production_density_kg_dm_total_ha": [10.0, 20.0, 30.0, 40.0],
+            "production_density_kg_dm_total_km2": [10.0, 20.0, 30.0, 40.0],
             "suitable_fraction": [0.1, 0.2, 0.3, 0.4],
             "net_irrigation_requirement_mm": [0.0, 50.0, 0.0, 80.0],
             "crop_cycle_start_doy": [None, 60.0, None, 90.0],
@@ -59,14 +59,47 @@ def test_wide_pivot_column_naming() -> None:
         }
     )
     wide = pivot_location_metrics(long, crops=["wheat"])
-    assert metric_column("wheat", "rainfed", "production_density_kg_dm_total_ha") in wide.columns
+    assert metric_column("wheat", "rainfed", "production_density_kg_dm_total_km2") in wide.columns
     assert metric_column("wheat", "irrigated", "yield_kg_dm_ha") in wide.columns
     assert metric_column("wheat", "irrigated", "net_irrigation_requirement_mm") in wide.columns
     assert metric_column("wheat", "irrigated", "suitability_index") in wide.columns
     row_a = wide.filter(pl.col("location_tag") == "a").to_dicts()[0]
-    assert row_a["wheat_rainfed_production_density_kg_dm_total_ha"] == 10.0
+    assert row_a["wheat_rainfed_production_density_kg_dm_total_km2"] == 10.0
     assert row_a["wheat_irrigated_suitable_fraction"] == 0.2
     assert row_a["wheat_irrigated_net_irrigation_requirement_mm"] == 50.0
+
+
+def test_wide_from_labels_converts_ha_density_to_km2(tmp_path: Path) -> None:
+    from prosper_or_perish_static_modifiers.crops import HECTARES_PER_KM2
+    from prosper_or_perish_static_modifiers.wide import build_wide_from_labels
+
+    geom = pl.DataFrame({"location_tag": ["a"], "pixel_count": [1]})
+    geom_path = tmp_path / "geom.parquet"
+    geom.write_parquet(geom_path)
+    labels = pl.DataFrame(
+        {
+            "location_tag": ["a", "a"],
+            "crop": ["wheat", "wheat"],
+            "water_mode": ["rainfed", "irrigated"],
+            "engine": ["gaez_v5", "gaez_v5"],
+            "yield_kg_dm_ha": [1.0, 2.0],
+            "production_density_kg_dm_total_ha": [3.0, 4.0],
+            "suitable_fraction": [0.1, 0.2],
+        }
+    )
+    labels_path = tmp_path / "labels.parquet"
+    labels.write_parquet(labels_path)
+    out = tmp_path / "wide.parquet"
+    build_wide_from_labels(
+        geometry_path=geom_path,
+        labels_path=labels_path,
+        output_path=out,
+        crops=["wheat"],
+    )
+    wide = pl.read_parquet(out)
+    assert wide["wheat_rainfed_production_density_kg_dm_total_km2"][0] == pytest.approx(
+        3.0 * HECTARES_PER_KM2
+    )
 
 
 def test_publish_pack_round_trip(tmp_path: Path) -> None:
@@ -106,7 +139,7 @@ def test_publish_pack_round_trip(tmp_path: Path) -> None:
     meta = json.loads((docs_dir / "data" / "meta.json").read_text(encoding="utf-8"))
     assert meta["default_metric"] == "production_density"
     assert meta["location_count"] == 2
-    assert any(col.endswith("production_density_kg_dm_total_ha") for col in meta["attribute_columns"])
+    assert any(col.endswith("production_density_kg_dm_total_km2") for col in meta["attribute_columns"])
     assert {m["id"] for m in meta["metrics"]} >= {"irrigation_need", "cycle_start", "suitability_index"}
     assert all("group" in m and "zero_is_missing" in m and "water_modes" in m for m in meta["metrics"])
     irrig = next(m for m in meta["metrics"] if m["id"] == "irrigation_need")

@@ -6,6 +6,7 @@ import numpy as np
 import polars as pl
 
 from prosper_or_perish_static_modifiers.crops import (
+    HECTARES_PER_KM2,
     WATER_MODES,
     crop_variant,
     raster_specs,
@@ -13,6 +14,8 @@ from prosper_or_perish_static_modifiers.crops import (
 )
 from prosper_or_perish_static_modifiers.fetch import resolve_raster_path
 from prosper_or_perish_static_modifiers.geometry import LOCATION_TAG
+
+PRODUCTION_DENSITY_COLUMN = "production_density_kg_dm_total_km2"
 
 
 def _lon_lat_columns(sample_points: pl.DataFrame) -> tuple[pl.Expr, pl.Expr]:
@@ -106,8 +109,9 @@ def sample_crop_water_mode(
     yield_samples = sample_raster_at_footprint_points(
         sample_points, yxx, value_column="yield_kg_dm_ha"
     )
+    # YLX native unit is kg DM / ha of total cell area.
     density_samples = sample_raster_at_footprint_points(
-        sample_points, ylx, value_column="production_density_kg_dm_total_ha"
+        sample_points, ylx, value_column="_ylx_kg_dm_total_ha"
     )
     suit_samples = sample_raster_at_footprint_points(
         sample_points, sx3, value_column="suitable_area_share_raw"
@@ -129,19 +133,23 @@ def sample_crop_water_mode(
         )
         .with_columns(
             (pl.col("suitable_area_share_raw") / 10_000.0).alias("suitable_fraction"),
+            (
+                pl.col("_ylx_kg_dm_total_ha") * HECTARES_PER_KM2
+            ).alias(PRODUCTION_DENSITY_COLUMN),
             pl.lit(crop).alias("crop"),
             pl.lit(water_mode).alias("water_mode"),
             pl.lit(crop_code).alias("crop_code"),
             pl.lit(crop_variant(crop, crop_code)).alias("crop_variant"),
         )
+        .drop("_ylx_kg_dm_total_ha")
         .with_columns(
             (
                 pl.col("yield_kg_dm_ha") * pl.col("sample_is_land").cast(pl.Float64)
             ).alias("yield_kg_dm_ha"),
             (
-                pl.col("production_density_kg_dm_total_ha")
+                pl.col(PRODUCTION_DENSITY_COLUMN)
                 * pl.col("sample_is_land").cast(pl.Float64)
-            ).alias("production_density_kg_dm_total_ha"),
+            ).alias(PRODUCTION_DENSITY_COLUMN),
             (
                 pl.col("suitable_fraction") * pl.col("sample_is_land").cast(pl.Float64)
             ).alias("suitable_fraction"),
@@ -156,7 +164,7 @@ def combine_taro_variants(frames: list[pl.DataFrame]) -> pl.DataFrame:
     variants = pl.concat(frames, how="vertical_relaxed").with_columns(
         (
             pl.col("yield_kg_dm_ha").is_finite()
-            & pl.col("production_density_kg_dm_total_ha").is_finite()
+            & pl.col("production_density_kg_dm_total_km2").is_finite()
             & pl.col("suitable_fraction").is_finite()
         ).alias("_finite")
     )
@@ -166,7 +174,7 @@ def combine_taro_variants(frames: list[pl.DataFrame]) -> pl.DataFrame:
                 LOCATION_TAG,
                 "sample_index",
                 "_finite",
-                "production_density_kg_dm_total_ha",
+                "production_density_kg_dm_total_km2",
                 "yield_kg_dm_ha",
                 "crop_variant",
             ],
@@ -181,7 +189,7 @@ def combine_taro_variants(frames: list[pl.DataFrame]) -> pl.DataFrame:
 def aggregate_samples_to_locations(sample_frame: pl.DataFrame) -> pl.DataFrame:
     finite = (
         pl.col("yield_kg_dm_ha").is_finite()
-        & pl.col("production_density_kg_dm_total_ha").is_finite()
+        & pl.col("production_density_kg_dm_total_km2").is_finite()
         & pl.col("suitable_fraction").is_finite()
     )
     return (
@@ -192,11 +200,11 @@ def aggregate_samples_to_locations(sample_frame: pl.DataFrame) -> pl.DataFrame:
                 / pl.col("sample_weight").filter(finite).sum()
             ).alias("yield_kg_dm_ha"),
             (
-                (pl.col("production_density_kg_dm_total_ha") * pl.col("sample_weight"))
+                (pl.col("production_density_kg_dm_total_km2") * pl.col("sample_weight"))
                 .filter(finite)
                 .sum()
                 / pl.col("sample_weight").filter(finite).sum()
-            ).alias("production_density_kg_dm_total_ha"),
+            ).alias("production_density_kg_dm_total_km2"),
             (
                 (pl.col("suitable_fraction") * pl.col("sample_weight")).filter(finite).sum()
                 / pl.col("sample_weight").filter(finite).sum()
@@ -207,7 +215,7 @@ def aggregate_samples_to_locations(sample_frame: pl.DataFrame) -> pl.DataFrame:
         )
         .with_columns(
             pl.col("yield_kg_dm_ha").fill_nan(None),
-            pl.col("production_density_kg_dm_total_ha").fill_nan(None),
+            pl.col("production_density_kg_dm_total_km2").fill_nan(None),
             pl.col("suitable_fraction").fill_nan(None),
         )
     )
