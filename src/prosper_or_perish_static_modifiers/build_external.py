@@ -6,6 +6,7 @@ import numpy as np
 import polars as pl
 import rasterio
 
+from prosper_or_perish_static_modifiers.eu5_population import build_eu5_population_layers
 from prosper_or_perish_static_modifiers.external_layers import (
     PILOT_LAYERS,
     resolve_layer_raster,
@@ -85,6 +86,8 @@ def build_external_wide(
     cache_dir: Path,
     geometry_path: Path,
     output_path: Path,
+    start_pops_path: Path | None = None,
+    location_area_path: Path | None = None,
 ) -> Path:
     """Sample pilot external rasters and emit one wide row per location."""
 
@@ -106,6 +109,8 @@ def build_external_wide(
 
     out = base
     for layer in PILOT_LAYERS:
+        if layer.source == "eu5":
+            continue
         raster_path = resolve_layer_raster(cache_dir, layer)
         band = layer.raster_band or 1
         sampled = sample_raster_at_footprint_points(
@@ -124,6 +129,26 @@ def build_external_wide(
         sampled = sampled.join(base_pts, on=[LOCATION_TAG, "sample_index"], how="left")
         loc = _aggregate_layer_to_locations(sampled, value_column=layer.layer_id)
         out = out.join(loc, on=LOCATION_TAG, how="left")
+
+    eu5_layers = [layer for layer in PILOT_LAYERS if layer.source == "eu5"]
+    if eu5_layers:
+        if start_pops_path is None or location_area_path is None:
+            raise ValueError(
+                "EU5 population layers require start_pops_path and location_area_path"
+            )
+        eu5 = build_eu5_population_layers(
+            start_pops_path=start_pops_path,
+            location_area_path=location_area_path,
+        )
+        for layer in eu5_layers:
+            column = layer.table_column or layer.layer_id
+            if column not in eu5.columns:
+                raise ValueError(f"EU5 population frame missing column {column}")
+            out = out.join(
+                eu5.select(LOCATION_TAG, pl.col(column).alias(layer.layer_id)),
+                on=LOCATION_TAG,
+                how="left",
+            )
 
     out = out.sort(LOCATION_TAG)
     output_path.parent.mkdir(parents=True, exist_ok=True)

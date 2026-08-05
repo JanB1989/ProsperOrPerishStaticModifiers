@@ -12,7 +12,7 @@ class ExternalLayerSpec:
     label: str
     group: str
     unit: str
-    source: str  # spam | glw | europe_suit | worldpop | hyde
+    source: str  # spam | glw | europe_suit | worldpop | hyde | eu5
     zero_is_missing: bool = True
     # Source-specific fields
     spam_variable: str | None = None  # Y | H
@@ -23,6 +23,8 @@ class ExternalLayerSpec:
     hyde_year: int | None = None  # CE year for HYDE popd (e.g. 1300)
     # WorldPop mosaic is people/pixel; convert to people/km² using cell area at sample lat.
     count_to_density: bool = False
+    # Table-backed layers (no raster sample); column is layer_id on the EU5 pop frame.
+    table_column: str | None = None
     eu5_goods: tuple[str, ...] = ()
 
 
@@ -162,6 +164,26 @@ PILOT_LAYERS: tuple[ExternalLayerSpec, ...] = (
         zero_is_missing=True,
         eu5_goods=(),
     ),
+    ExternalLayerSpec(
+        layer_id="eu5_population_total",
+        label="Population total (EU5 1337 start)",
+        group="EU5 population",
+        unit="people",
+        source="eu5",
+        table_column="eu5_population_total",
+        zero_is_missing=True,
+        eu5_goods=(),
+    ),
+    ExternalLayerSpec(
+        layer_id="eu5_population_density",
+        label="Population density (EU5 1337 start)",
+        group="EU5 population",
+        unit="people/km²",
+        source="eu5",
+        table_column="eu5_population_density",
+        zero_is_missing=True,
+        eu5_goods=(),
+    ),
 )
 
 
@@ -247,5 +269,10 @@ def resolve_layer_raster(cache_dir: Path, layer: ExternalLayerSpec) -> Path:
         if not path.is_file():
             raise FileNotFoundError(f"missing HYDE raster {path}")
         return path
+
+    if layer.source == "eu5":
+        raise ValueError(
+            f"layer {layer.layer_id} is table-backed (source=eu5); no raster path"
+        )
 
     raise ValueError(f"unknown layer source: {layer.source}")

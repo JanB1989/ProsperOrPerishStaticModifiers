@@ -9,6 +9,11 @@ labeling_baseline = "../ProsperOrPerishLabelingPipeline/base_data/locations_with
 # Game-authoritative footprint sample points (lon/lat + sample_weight per location).
 sample_points = "../ProsperOrPerishConstructor/artifacts/data/population_capacity/geometry_land_contract_candidate_v1/full/game_authoritative_physical_samples.parquet"
 
+# Calibrated location area (km²) for EU5 population density.
+# location_area = "../ProsperOrPerishConstructor/artifacts/data/population_capacity/geometry_land_contract_candidate_v1/location_geometry_candidate.parquet"
+# Vanilla 1337 start pops (game size × 1000 → people). Defaults under vanilla_root.
+# start_pops = "C:\\Games\\steamapps\\common\\Europa Universalis V\\game\\main_menu\\setup\\start\\06_pops.txt"
+
 gaez_cache_dir = "artifacts/gaez_cache"
 artifacts_dir = "artifacts"
 docs_dir = "docs"

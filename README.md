@@ -7,7 +7,7 @@ Standalone **uv / Python** ETL that samples FAO GAEZ v5 (and exploration) raster
 1. Downloads locked GAEZ v5 RES05 **YXX** (yield), **YLX** (production density), and **SX3** (suitable area) rasters.
 2. Samples them at game-authoritative EU5 footprint points.
 3. Emits one wide parquet: one row per location, with rain-fed and irrigated density / yield / suitable columns for 23 crops.
-4. Optionally downloads and samples **exploration pilots**: MapSPAM (wheat/maize/cotton), GLW4 (cattle/sheep), Europe ag suitability 1500, WorldPop 2020 density, HYDE pop density 1300/1400/1500.
+4. Optionally downloads and samples **exploration pilots**: MapSPAM, GLW4, Europe 1500, WorldPop/HYDE population, plus **EU5 1337 start population** (total + density).
 5. Publishes a compact client-side map under `docs/` (GAEZ crop modes + exploration Dataset switch).
 
 See [research/dataset_catalog.md](research/dataset_catalog.md) for the full external-dataset inventory and ML feature/label roles.
@@ -52,7 +52,7 @@ uv run posm build-external
 uv run posm publish
 ```
 
-Open `http://127.0.0.1:8000/`. Use **Dataset → Exploration layers** for MapSPAM / GLW / Europe 1500 / population groups.
+Open `http://127.0.0.1:8000/`. Use **Dataset → Exploration layers** for MapSPAM / GLW / Europe 1500 / population / EU5 groups.
 
 ### Outputs
 
@@ -91,4 +91,5 @@ uv run pytest
 - Europe suitability 1500–2000: Harvard Dataverse (doi:10.7910/DVN/ECWMZS).
 - WorldPop 2020 1 km mosaic: WorldPop / University of Southampton (CC BY 4.0).
 - HYDE 3.2.1 population density: DANS (doi:10.17026/dans-25g-gez3), CC BY 3.0; only `popd` ASC years are Range-extracted.
+- EU5 start population: vanilla `06_pops.txt` (game units × 1000 → people); density uses Constructor calibrated location area.
 - This repo does not redistribute vanilla map assets.

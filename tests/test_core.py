@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import polars as pl
+import pytest
 
 from prosper_or_perish_static_modifiers.crops import (
     CROPS,
@@ -160,6 +161,54 @@ def test_publish_exploration_pack(tmp_path: Path) -> None:
     assert "spam_cotton_rainfed_yield" in meta["exploration"]["attribute_columns"]
     assert "glw_cattle_density" in meta["exploration"]["attribute_columns"]
     assert "europe_ag_suitability_1500" in meta["exploration"]["attribute_columns"]
+    assert "eu5_population_total" in meta["exploration"]["attribute_columns"]
+    assert "eu5_population_density" in meta["exploration"]["attribute_columns"]
+
+
+def test_parse_eu5_start_population_scales_game_units(tmp_path: Path) -> None:
+    from prosper_or_perish_static_modifiers.eu5_population import (
+        PEOPLE_PER_GAME_POPULATION_UNIT,
+        build_eu5_population_layers,
+        parse_eu5_start_population,
+    )
+
+    pops_path = tmp_path / "06_pops.txt"
+    pops_path.write_text(
+        """
+locations={
+stockholm = {
+	define_pop = {	type = burghers	size = 1.5	culture = swedish	religion = catholic }
+	define_pop = {	type = peasants	size = 20.316	culture = swedish	religion = catholic }
+}
+empty_lake = {
+}
+}
+""",
+        encoding="utf-8",
+    )
+    pops = parse_eu5_start_population(pops_path)
+    stockholm = pops.filter(pl.col("location_tag") == "stockholm").to_dicts()[0]
+    assert stockholm["eu5_population_total"] == pytest.approx(
+        (1.5 + 20.316) * PEOPLE_PER_GAME_POPULATION_UNIT
+    )
+    empty = pops.filter(pl.col("location_tag") == "empty_lake").to_dicts()[0]
+    assert empty["eu5_population_total"] == 0.0
+
+    area_path = tmp_path / "area.parquet"
+    pl.DataFrame(
+        {
+            "location_tag": ["stockholm", "empty_lake"],
+            "area_jacobian_km2": [2000.0, 100.0],
+        }
+    ).write_parquet(area_path)
+    wide = build_eu5_population_layers(
+        start_pops_path=pops_path,
+        location_area_path=area_path,
+    )
+    row = wide.filter(pl.col("location_tag") == "stockholm").to_dicts()[0]
+    assert row["eu5_population_density"] == pytest.approx(
+        ((1.5 + 20.316) * PEOPLE_PER_GAME_POPULATION_UNIT) / 2000.0
+    )
 
 
 def test_pilot_layer_catalog_covers_plan() -> None:
@@ -176,6 +225,8 @@ def test_pilot_layer_catalog_covers_plan() -> None:
     assert "hyde_pop_density_1300" in ids
     assert "hyde_pop_density_1400" in ids
     assert "hyde_pop_density_1500" in ids
+    assert "eu5_population_total" in ids
+    assert "eu5_population_density" in ids
     groups = {layer.group for layer in PILOT_LAYERS}
     assert groups == {
         "MapSPAM observed",
@@ -183,4 +234,5 @@ def test_pilot_layer_catalog_covers_plan() -> None:
         "Historical Europe",
         "Modern population",
         "Historical population",
+        "EU5 population",
     }

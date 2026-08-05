@@ -533,7 +533,9 @@
       "worldpop_pop_density_2020",
       "hyde_pop_density_1300",
       "hyde_pop_density_1400",
-      "hyde_pop_density_1500"
+      "hyde_pop_density_1500",
+      "eu5_population_total",
+      "eu5_population_density"
     ],
     "layers": [
       {
@@ -653,6 +655,22 @@
         "id": "hyde_pop_density_1500",
         "label": "Population density (HYDE 1500)",
         "group": "Historical population",
+        "unit": "people/km\u00b2",
+        "zero_is_missing": true,
+        "eu5_goods": []
+      },
+      {
+        "id": "eu5_population_total",
+        "label": "Population total (EU5 1337 start)",
+        "group": "EU5 population",
+        "unit": "people",
+        "zero_is_missing": true,
+        "eu5_goods": []
+      },
+      {
+        "id": "eu5_population_density",
+        "label": "Population density (EU5 1337 start)",
+        "group": "EU5 population",
         "unit": "people/km\u00b2",
         "zero_is_missing": true,
         "eu5_goods": []

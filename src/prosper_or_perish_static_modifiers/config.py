@@ -57,6 +57,8 @@ class ProjectConfig:
     labels_long: Path | None
     crop_samples_dir: Path | None
     external_cache_dir: Path
+    location_area_path: Path
+    start_pops_path: Path
     crops: list[str]
     water_modes: list[str]
     equator_y: int
@@ -118,6 +120,22 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
     labels_raw = paths.get("labels_long")
     samples_raw = paths.get("crop_samples_dir")
     external_raw = paths.get("external_cache_dir", "artifacts/external_cache")
+    area_raw = paths.get(
+        "location_area",
+        "../ProsperOrPerishConstructor/artifacts/data/population_capacity/"
+        "geometry_land_contract_candidate_v1/location_geometry_candidate.parquet",
+    )
+    pops_raw = paths.get(
+        "start_pops",
+        str(
+            vanilla_root
+            / "game"
+            / "main_menu"
+            / "setup"
+            / "start"
+            / "06_pops.txt"
+        ),
+    )
     return ProjectConfig(
         repo=repo,
         vanilla_root=vanilla_root,
@@ -130,6 +148,8 @@ def load_config(path: str | Path | None = None) -> ProjectConfig:
         labels_long=resolve_path(labels_raw, base=repo) if labels_raw else None,
         crop_samples_dir=resolve_path(samples_raw, base=repo) if samples_raw else None,
         external_cache_dir=resolve_path(external_raw, base=repo),
+        location_area_path=resolve_path(area_raw, base=repo),
+        start_pops_path=resolve_path(pops_raw, base=repo),
         crops=list(pipeline.get("crops") or []),
         water_modes=list(pipeline.get("water_modes") or ["rainfed", "irrigated"]),
         equator_y=int(pipeline.get("equator_y", 1024)),
